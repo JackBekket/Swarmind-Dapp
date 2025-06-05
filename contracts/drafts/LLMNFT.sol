@@ -34,18 +34,19 @@ contract LLMNFT is ERC721URIStorage{
     string author;
     string hfid;    // huggingface id
     // model_config --- yaml config of a model for local ai
-    uint256 Price;  //  // text could be charged per token or per 1m llm tokens, image, video, voice, etc -- per request.
+    uint256 royalty_price;  //  // text could be charged per token or per 1m llm tokens, image, video, voice, etc -- per request.
     address author_wallet;
-    llm_type model_type;
+    Llm_type model_type;
+    uint256 max_context_window;
     }
 
-    enum llm_type {text,image}  // text could be charged per token or per 1m llm tokens, image, video, voice, etc -- per request.
+    enum Llm_type {text,image}  // text could be charged per token or per 1m llm tokens, image, video, voice, etc -- per request.
     
     // TODO: think how to set up and store quantisation type is neccessary. mostly used q4_k_m as default median; fp16 (floating point 16) is original file without quantisation
     //enum quantisation_type {q2_k,q3_k_m,q4_k_m ..... q8_0, fp16}
 
-    mapping (uint256 => LLM) Models_metadata;
-    mapping (string =>uint256) Hf_models; // from hfid to token_id
+    mapping (uint256 => LLM) public Models_metadata;  // from token_id to llm struct
+    mapping (string =>uint256) public Hf_models; // from hfid to token_id
 
 
 
@@ -77,14 +78,15 @@ contract LLMNFT is ERC721URIStorage{
     */
 
 
-   function CreateLLM_NFT(string memory hf_id_, uint256 price, address wallet, llm_type model_type_) public returns (uint256) {
+   function CreateLLM_NFT(string memory hf_id_, uint256 price, address wallet, Llm_type model_type_, uint256 max_context) public returns (uint256) {
 
         LLM memory llm;
         //llm.author = author_;   // 'TheDrummer' -- hf user
         llm.hfid = hf_id_; // 'TheDrummer/Tiger-Gemma-9B-v1-GGUF' -- namespace/model
-        llm.Price = price;          // price per token to go as royalty
+        llm.royalty_price = price;          // price per token to go as royalty
         llm.author_wallet = wallet; // author wallet
         llm.model_type = model_type_;
+        llm.max_context_window = max_context;
         token_ids_count +=1;
         uint256 token_id = token_ids_count;
         _safeMint(msg.sender,token_id);
@@ -94,5 +96,10 @@ contract LLMNFT is ERC721URIStorage{
         _setTokenURI(token_id,file_id);
         return token_id;
    }
+
+    function GetLLM(uint token_id) public view returns (LLM memory) {
+        return Models_metadata[token_id];
+    }
+   
 
 }
