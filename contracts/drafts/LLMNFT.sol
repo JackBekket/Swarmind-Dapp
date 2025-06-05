@@ -1,4 +1,4 @@
-//SPDX-License-Identifier: MIT
+//SPDX-License-Identifier: Business License
 pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
@@ -44,8 +44,8 @@ contract LLMNFT is ERC721URIStorage{
     // TODO: think how to set up and store quantisation type is neccessary. mostly used q4_k_m as default median; fp16 (floating point 16) is original file without quantisation
     //enum quantisation_type {q2_k,q3_k_m,q4_k_m ..... q8_0, fp16}
 
-    mapping (uint256 => LLM) models_metadata;
-    
+    mapping (uint256 => LLM) Models_metadata;
+    mapping (string =>uint256) Hf_models; // from hfid to token_id
 
 
 
@@ -77,20 +77,22 @@ contract LLMNFT is ERC721URIStorage{
     */
 
 
-   function CreateLLM_NFT(string memory author_, string memory model_name_, uint256 price, address wallet, llm_type model_type_) public {
+   function CreateLLM_NFT(string memory hf_id_, uint256 price, address wallet, llm_type model_type_) public returns (uint256) {
 
         LLM memory llm;
-        llm.author = author_;   // 'TheDrummer' -- hf user
-        llm.hfid = model_name_; // 'Tiger-Gemma-9B-v1-GGUF' -- repo of model
+        //llm.author = author_;   // 'TheDrummer' -- hf user
+        llm.hfid = hf_id_; // 'TheDrummer/Tiger-Gemma-9B-v1-GGUF' -- namespace/model
         llm.Price = price;          // price per token to go as royalty
         llm.author_wallet = wallet; // author wallet
         llm.model_type = model_type_;
         token_ids_count +=1;
         uint256 token_id = token_ids_count;
         _safeMint(msg.sender,token_id);
-        models_metadata[token_id] = llm;
+        Models_metadata[token_id] = llm;
+        Hf_models[hf_id_] = token_id;
         string memory file_id = llm.hfid;
         _setTokenURI(token_id,file_id);
+        return token_id;
    }
 
 }
