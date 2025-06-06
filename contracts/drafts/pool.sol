@@ -59,6 +59,16 @@ contract Pool is Ownable {
         Pay_type pay_type_;
     }
 
+
+        struct Request {
+        uint256 id;
+        address user;
+        address worker;
+        uint256 llmTokens;
+        uint256 processingTime;
+        uint256 timestamp;
+                        }
+
     //LLM_meta[] llm_list;    // TODO: idk if we should use mapping or array.
     mapping (uint => LLM_meta) llm_list;
 
@@ -134,7 +144,7 @@ contract Pool is Ownable {
 
 
     // Check that user have enough money before calling request
-    function pre_request(uint llm_id, address user) public view {
+    function Pre_request(uint llm_id, address user) public view {
         LLMNFT.LLM memory llms = nft.GetLLM(llm_id);
         LLMNFT.Llm_type lm_type = llms.model_type;
         Pay_type pt_;
@@ -155,7 +165,11 @@ contract Pool is Ownable {
     }
 
 
-    
+    /*
+    function ProcessResponse()  returns () {
+        
+    }
+    */
 
 
 }
