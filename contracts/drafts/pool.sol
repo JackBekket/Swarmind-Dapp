@@ -6,6 +6,7 @@ pragma solidity ^0.8.28;
 //import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./LLMNFT.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 
@@ -20,8 +21,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Pool is Ownable {
 
 
-    constructor(address llm_nft) Ownable(msg.sender){
+    constructor(address llm_nft, address credit_) Ownable(msg.sender){
         nft = LLMNFT(llm_nft);
+        credit = IERC20(credit_);
     }
 
 
@@ -34,9 +36,16 @@ contract Pool is Ownable {
     //IERC721Metadata LLMNFT_token;
     LLMNFT nft;
 
+    IERC20 credit;
+
 
     mapping (string => address) worker_wallets;     // local_ai public key -> worker wallet address
     mapping (address => string) wallets_workers;    // wallet address -> lai public key
+    mapping (address => uint) user_deposits;
+
+
+    //TODO: events
+    event Deposit(address user, uint amount);
     
     // TODO: add other metadata from edgevpn into worker struct and make update methods
 
@@ -50,8 +59,13 @@ contract Pool is Ownable {
         Pay_type pay_type_;
     }
 
-    LLM_meta[] llm_list;    // TODO: idk if we should use mapping or array.
+    //LLM_meta[] llm_list;    // TODO: idk if we should use mapping or array.
+    mapping (uint => LLM_meta) llm_list;
 
+
+    function GetMetaLLM(uint llm_id) public view returns (LLM_meta memory) {
+        return llm_list[llm_id];
+    }
 
 
     // TODO: think about possible security hacks
@@ -103,10 +117,45 @@ contract Pool is Ownable {
        lm.author_wallet = llm_struct.author_wallet;
        lm.token_id = token_id;
        lm.hw_price_per_token = hw_price;
-       llm_list.push(lm);
+       //llm_list.push(lm);
+       llm_list[token_id] = lm;
     }
 
     // TODO: add Read (getter), Update, Delete funcs for llm models.
+
+
+
+
+    function DepositCredit(uint amount)  public {
+       require (credit.transferFrom(msg.sender,address(this),amount));
+       user_deposits[msg.sender] += amount;
+       emit Deposit(msg.sender,amount);
+    }
+
+
+    // Check that user have enough money before calling request
+    function pre_request(uint llm_id, address user) public view {
+        LLMNFT.LLM memory llms = nft.GetLLM(llm_id);
+        LLMNFT.Llm_type lm_type = llms.model_type;
+        Pay_type pt_;
+        uint max_context = llms.max_context_window;
+        LLM_meta memory meta = GetMetaLLM(llm_id);
+        uint hw_price = meta.hw_price_per_token;
+        //uint royalty = meta.author_royalty;
+        uint price;
+       if (lm_type == LLMNFT.Llm_type.text) {
+            pt_ = Pay_type.token;    // tarification per token
+            price = max_context * hw_price;  
+       } else {
+        pt_ = Pay_type.request;
+        price = hw_price * 1;
+       }
+        uint balance = user_deposits[user];
+        require (balance >= price, "user balance below max context window");
+    }
+
+
+    
 
 
 }
