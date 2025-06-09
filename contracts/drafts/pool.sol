@@ -46,6 +46,7 @@ contract Pool is Ownable {
 
     //TODO: events
     event Deposit(address user, uint amount);
+
     
     // TODO: add other metadata from edgevpn into worker struct and make update methods
 
@@ -60,14 +61,21 @@ contract Pool is Ownable {
     }
 
 
-        struct Request {
-        uint256 id;
-        address user;
-        address worker;
-        uint256 llmTokens;
-        uint256 processingTime;
-        uint256 timestamp;
-                        }
+
+    event Response(
+        uint256 id,     
+        uint256 llm_id,
+        address worker,
+        uint256 llmTokens,
+        uint256 cost,
+        uint256 processingTime,
+        uint256 timestamp
+
+    );
+
+    event Payout(address provider,uint256 llm_id, uint amount);
+
+
 
     //LLM_meta[] llm_list;    // TODO: idk if we should use mapping or array.
     mapping (uint => LLM_meta) llm_list;
@@ -75,6 +83,14 @@ contract Pool is Ownable {
 
     function GetMetaLLM(uint llm_id) public view returns (LLM_meta memory) {
         return llm_list[llm_id];
+    }
+
+    function GetTotalPrice(uint llm_id) public view returns (uint) {
+        LLM_meta memory lm = GetMetaLLM(llm_id);
+        uint ap = lm.author_royalty;
+        uint hwp = lm.hw_price_per_token;
+        uint tp = ap + hwp;
+        return tp;
     }
 
 
@@ -90,7 +106,10 @@ contract Pool is Ownable {
         }
     }
 
-
+    function GetWorkerAddress(string memory lai_id) public view returns (address) {
+        address worker = worker_wallets[lai_id];
+        return worker;
+    }
 
 
     function Unregister() public  {
@@ -104,6 +123,7 @@ contract Pool is Ownable {
 
 
     // TODO: IMPORTANT -- change visibility to only Owner or only factory(?). idk what would be tipical deployment process prolly just onlyOwner works fine.
+    // TODO: add blacklist, put address / identity in blacklist and make it possible to unban users
     function Ban(string memory lai_pub_key) public onlyOwner {
         address worker_address = worker_wallets[lai_pub_key];
         delete worker_wallets[lai_pub_key];
@@ -165,11 +185,40 @@ contract Pool is Ownable {
     }
 
 
-    /*
-    function ProcessResponse()  returns () {
+    
+    function ProcessResponse(uint request_id, string memory worker_id ,uint llm_id, uint256 llmTokens, uint processingTime) public  {
+        uint tprice = GetTotalPrice(llm_id);
+        LLM_meta memory lm = GetMetaLLM(llm_id);
+        Pay_type pt_ = lm.pay_type_;
+        uint hwp;
+        uint cost_hw;
+        uint awp;
+        uint a_cost;
         
+        if (pt_ == Pay_type.token) {
+            hwp = lm.hw_price_per_token;
+            cost_hw = hwp * llmTokens;
+            a_cost = lm.author_royalty * llmTokens;
+        } else {
+            hwp = lm.hw_price_per_token;
+            awp = lm.author_royalty;
+            cost_hw = hwp; // per request
+            a_cost = awp;
+        }
+
+        address worker = GetWorkerAddress(worker_id);
+        address author = lm.author_wallet;
+
+        require (credit.transfer(worker,cost_hw));
+        require(credit.transfer(author,a_cost));
+
+        uint timestamp = block.timestamp;
+
+        emit Response(request_id,llm_id,worker,llmTokens,tprice,processingTime,timestamp);
+        emit Payout(worker,llm_id,cost_hw);
+
     }
-    */
+    
 
 
 }
