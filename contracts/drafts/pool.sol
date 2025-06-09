@@ -5,6 +5,7 @@ pragma solidity ^0.8.28;
 //import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 //import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./LLMNFT.sol";
+import "./FeesCalculator.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -37,6 +38,9 @@ contract Pool is Ownable {
     LLMNFT nft;
 
     IERC20 credit;
+
+    uint service_fee_percent = 1; // 1%
+    // TODO: add constant service address where we will collect fee
 
 
     mapping (string => address) worker_wallets;     // local_ai public key -> worker wallet address
@@ -184,6 +188,11 @@ contract Pool is Ownable {
         require (balance >= price, "user balance below max context window");
     }
 
+
+    function CalculateServiceFee(uint hw_cost) public view returns (uint) {
+        uint service_fee = FeesCalculator.CalculateAbstractFee(hw_cost,100,service_fee_percent);
+        return service_fee;
+    }
 
     
     function ProcessResponse(uint request_id, string memory worker_id ,uint llm_id, uint256 llmTokens, uint processingTime) public  {
