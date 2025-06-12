@@ -105,8 +105,6 @@ contract Pool is Ownable {
     // TODO: add approve mechanism for private federations
     function RegisterWorker(string memory lai_public_key) public {
         require(!blacklist[lai_public_key], "This key is in blacklist"); 
-        string memory identity = wallets_workers[msg.sender];
-        require(!blacklist[identity], "This address is in blacklist"); 
         if (pt== Pool_type.public_pool) {
             bytes memory pub_key = bytes(wallets_workers[msg.sender]);
             require (pub_key.length == 0);
@@ -163,10 +161,21 @@ contract Pool is Ownable {
        llm_list[token_id] = lm;
     }
 
-    // TODO: add Read (getter), Update, Delete funcs for llm models.
+    function GetModel (uint256 llm_id) public view returns (Pool.LLM_meta memory) {
+        return llm_list[llm_id];
+    }
 
+    function UpdateModel (uint256 llm_id, uint new_royalty, address new_address) public onlyOwner  {
+       Pool.LLM_meta memory lm = llm_list[llm_id];
+       lm.author_royalty = new_royalty;
+       lm.author_wallet = new_address;
+       llm_list[llm_id] = lm;
+    }
 
-
+    function DeleteModel (uint256 llm_id) public onlyOwner  {
+    delete llm_list[llm_id];
+    }
+        
 
     function DepositCredit(uint amount)  public { 
        require (credit.transferFrom(msg.sender,address(this),amount));
@@ -204,7 +213,7 @@ contract Pool is Ownable {
 
     
     function ProcessResponse(uint request_id, string memory worker_id ,uint llm_id, uint256 llmTokens, uint processingTime) public  {
-        require(!blacklist[worker_id], "This address is in blacklist"); 
+        require(!blacklist[worker_id], "This worker is in blacklist"); 
         uint tprice = GetTotalPrice(llm_id);
         LLM_meta memory lm = GetMetaLLM(llm_id);
         Pay_type pt_ = lm.pay_type_;
