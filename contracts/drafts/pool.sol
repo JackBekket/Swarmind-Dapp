@@ -39,6 +39,8 @@ contract Pool is Ownable {
 
     IERC20 credit;
 
+
+
     uint service_fee_percent = 1; // 1%
     // TODO: add constant service address where we will collect fee
     //SUGGESTION @daseinsucks: use multisig?
@@ -48,8 +50,10 @@ contract Pool is Ownable {
     mapping (address => string) wallets_workers;    // wallet address -> lai public key
     mapping (address => uint) user_deposits;
     mapping (string => bool) public blacklist; //address => banned (true/false)
-
+    mapping (string => bool) public isApproved; //for private pools
     //TODO: events
+
+
     event Deposit(address user, uint amount);
     event Payout(address provider,uint256 llm_id, uint amount);
     event Response(
@@ -61,7 +65,7 @@ contract Pool is Ownable {
         uint256 processingTime,
         uint256 timestamp
     );
-
+    event NewWorker (address worker, bool isApproved);
 
 
     // TODO: add other metadata from edgevpn into worker struct and make update methods
@@ -75,12 +79,6 @@ contract Pool is Ownable {
         uint256 hw_price_per_token; // hardware provider is setting price per 1m tokens, so there should be conversion here.
         Pay_type pay_type_;
     }
-
-
-
-  
- 
-
 
 
     //LLM_meta[] llm_list;    // TODO: idk if we should use mapping or array.
@@ -102,18 +100,18 @@ contract Pool is Ownable {
 
 
     // TODO: think about possible security hacks
-    // TODO: add approve mechanism for private federations
     function RegisterWorker(string memory lai_public_key) public {
-        require(!blacklist[lai_public_key], "This key is in blacklist"); 
-        if (pt== Pool_type.public_pool) {
+        require(!blacklist[lai_public_key], "This key is in blacklist");
             bytes memory pub_key = bytes(wallets_workers[msg.sender]);
             require (pub_key.length == 0);
             wallets_workers[msg.sender] = lai_public_key;
             worker_wallets[lai_public_key] = msg.sender;
-           // return true;
+         if (pt== Pool_type.public_pool) {
+            isApproved[lai_public_key] = true;
         } else {
-            //TODO: private logic goes here
+            isApproved[lai_public_key] = false;
         }
+        emit NewWorker(msg.sender, isApproved);
     }
 
     function GetWorkerAddress(string memory lai_id) public view returns (address) {
@@ -121,6 +119,9 @@ contract Pool is Ownable {
         return worker;
     }
 
+    function ApproveWorker(string memory lai_public_key) public onlyOwner {
+        isApproved[lai_public_key] = true;
+    }
 
     function Unregister() public  {
         bytes memory pub_key = bytes(wallets_workers[msg.sender]);
@@ -214,6 +215,7 @@ contract Pool is Ownable {
     
     function ProcessResponse(uint request_id, string memory worker_id ,uint llm_id, uint256 llmTokens, uint processingTime) public  {
         require(!blacklist[worker_id], "This worker is in blacklist"); 
+         require(isApproved[worker_id], "This worker is not yet approved"); 
         uint tprice = GetTotalPrice(llm_id);
         LLM_meta memory lm = GetMetaLLM(llm_id);
         Pay_type pt_ = lm.pay_type_;
