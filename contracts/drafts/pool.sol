@@ -29,7 +29,7 @@ contract Pool is Ownable {
 
 
     //global vars
-    enum Pool_type {privat_pool,public_pool} 
+    enum Pool_type {private_pool,public_pool} 
     enum Pay_type {token,request}
 
     //address owner;
@@ -39,19 +39,35 @@ contract Pool is Ownable {
 
     IERC20 credit;
 
+
+
     uint service_fee_percent = 1; // 1%
     // TODO: add constant service address where we will collect fee
+    //SUGGESTION @daseinsucks: use multisig?
 
 
     mapping (string => address) worker_wallets;     // local_ai public key -> worker wallet address
     mapping (address => string) wallets_workers;    // wallet address -> lai public key
     mapping (address => uint) user_deposits;
-
-
+    mapping (string => bool) public blacklist; //address => banned (true/false)
+    mapping (string => bool) public isApproved; //for private pools
     //TODO: events
-    event Deposit(address user, uint amount);
 
-    
+
+    event Deposit(address user, uint amount);
+    event Payout(address provider,uint256 llm_id, uint amount);
+    event Response(
+        uint256 id,     
+        uint256 llm_id,
+        address worker,
+        uint256 llmTokens,
+        uint256 cost,
+        uint256 processingTime,
+        uint256 timestamp
+    );
+    event NewWorker (address worker, bool isApproved);
+
+
     // TODO: add other metadata from edgevpn into worker struct and make update methods
 
 
@@ -65,23 +81,8 @@ contract Pool is Ownable {
     }
 
 
-
-    event Response(
-        uint256 id,     
-        uint256 llm_id,
-        address worker,
-        uint256 llmTokens,
-        uint256 cost,
-        uint256 processingTime,
-        uint256 timestamp
-
-    );
-
-    event Payout(address provider,uint256 llm_id, uint amount);
-
-
-
     //LLM_meta[] llm_list;    // TODO: idk if we should use mapping or array.
+    //SUGGESTION @daseinsucks: I say we use map, since for crud methods it'll be cheaper to fetch from map than iterate through array
     mapping (uint => LLM_meta) llm_list;
 
 
@@ -99,15 +100,18 @@ contract Pool is Ownable {
 
 
     // TODO: think about possible security hacks
-    // TODO: add approve mechanism for private federations
     function RegisterWorker(string memory lai_public_key) public {
-        if (pt== Pool_type.public_pool) {
+        require(!blacklist[lai_public_key], "This key is in blacklist");
             bytes memory pub_key = bytes(wallets_workers[msg.sender]);
             require (pub_key.length == 0);
             wallets_workers[msg.sender] = lai_public_key;
             worker_wallets[lai_public_key] = msg.sender;
-           // return true;
+         if (pt== Pool_type.public_pool) {
+            isApproved[lai_public_key] = true;
+        } else {
+            isApproved[lai_public_key] = false;
         }
+        emit NewWorker(msg.sender, isApproved);
     }
 
     function GetWorkerAddress(string memory lai_id) public view returns (address) {
@@ -115,6 +119,9 @@ contract Pool is Ownable {
         return worker;
     }
 
+    function ApproveWorker(string memory lai_public_key) public onlyOwner {
+        isApproved[lai_public_key] = true;
+    }
 
     function Unregister() public  {
         bytes memory pub_key = bytes(wallets_workers[msg.sender]);
@@ -127,12 +134,12 @@ contract Pool is Ownable {
 
 
     // TODO: IMPORTANT -- change visibility to only Owner or only factory(?). idk what would be tipical deployment process prolly just onlyOwner works fine.
-    // TODO: add blacklist, put address / identity in blacklist and make it possible to unban users
     function Ban(string memory lai_pub_key) public onlyOwner {
-        address worker_address = worker_wallets[lai_pub_key];
-        delete worker_wallets[lai_pub_key];
-        delete wallets_workers[worker_address];
+     blacklist[lai_pub_key] = true;
+    }
 
+     function Unban(string memory lai_pub_key) public onlyOwner {
+     blacklist[lai_pub_key] = false;
     }
 
 
@@ -155,12 +162,23 @@ contract Pool is Ownable {
        llm_list[token_id] = lm;
     }
 
-    // TODO: add Read (getter), Update, Delete funcs for llm models.
+    function GetModel (uint256 llm_id) public view returns (Pool.LLM_meta memory) {
+        return llm_list[llm_id];
+    }
 
+    function UpdateModel (uint256 llm_id, uint new_royalty, address new_address) public onlyOwner  {
+       Pool.LLM_meta memory lm = llm_list[llm_id];
+       lm.author_royalty = new_royalty;
+       lm.author_wallet = new_address;
+       llm_list[llm_id] = lm;
+    }
 
+    function DeleteModel (uint256 llm_id) public onlyOwner  {
+    delete llm_list[llm_id];
+    }
+        
 
-
-    function DepositCredit(uint amount)  public {
+    function DepositCredit(uint amount)  public { 
        require (credit.transferFrom(msg.sender,address(this),amount));
        user_deposits[msg.sender] += amount;
        emit Deposit(msg.sender,amount);
@@ -196,6 +214,8 @@ contract Pool is Ownable {
 
     
     function ProcessResponse(uint request_id, string memory worker_id ,uint llm_id, uint256 llmTokens, uint processingTime) public  {
+        require(!blacklist[worker_id], "This worker is in blacklist"); 
+         require(isApproved[worker_id], "This worker is not yet approved"); 
         uint tprice = GetTotalPrice(llm_id);
         LLM_meta memory lm = GetMetaLLM(llm_id);
         Pay_type pt_ = lm.pay_type_;
@@ -217,7 +237,7 @@ contract Pool is Ownable {
 
         address worker = GetWorkerAddress(worker_id);
         address author = lm.author_wallet;
-
+        
         require (credit.transfer(worker,cost_hw));
         require(credit.transfer(author,a_cost));
 
