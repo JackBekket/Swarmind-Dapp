@@ -111,7 +111,7 @@ contract Pool is Ownable {
         } else {
             isApproved[lai_public_key] = false;
         }
-        emit NewWorker(msg.sender, isApproved);
+        emit NewWorker(msg.sender, isApproved[lai_public_key]);
     }
 
     function GetWorkerAddress(string memory lai_id) public view returns (address) {
