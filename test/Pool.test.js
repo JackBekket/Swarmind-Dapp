@@ -1,5 +1,12 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const fs = require("fs");
+
+const gasStats = {};
+function recordGas(label, gas) {
+  if (!gasStats[label]) gasStats[label] = [];
+  gasStats[label].push(gas.toString());
+}
 
 describe("Pool", function () {
   let owner, user1, other;
@@ -34,6 +41,7 @@ describe("Pool", function () {
     const tx = await pool.connect(user1).RegisterWorker(laiKey);
     const receipt = await tx.wait();
     console.log("Gas used for RegisterWorker:", receipt.gasUsed.toString());
+    recordGas("RegisterWorker", receipt.gasUsed);
 
 
     const workerAddr = await pool.GetWorkerAddress(laiKey);
@@ -75,5 +83,25 @@ describe("Pool", function () {
       pool.connect(user1).RegisterWorker("key20")
     ).to.be.revertedWith("Maximum number of workers (20) reached");
   });
+});
+
+after(async function () {
+  const file = "gas-stats.json";
+  let data = {};
+  if (fs.existsSync(file)) {
+    try {
+      data = JSON.parse(fs.readFileSync(file));
+    } catch (e) {
+      // ignore parse errors, overwrite file
+    }
+  }
+  Object.entries(gasStats).forEach(([k, v]) => {
+    if (data[k]) {
+      data[k] = data[k].concat(v);
+    } else {
+      data[k] = v;
+    }
+  });
+  fs.writeFileSync(file, JSON.stringify(data, null, 2));
 });
 
