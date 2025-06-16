@@ -30,7 +30,11 @@ describe("Pool", function () {
   it("should register a new worker", async function () {
     const laiKey = "test-lai-key";
 
-    await pool.connect(user1).RegisterWorker(laiKey);
+    //Use this block to measure gas with other functions
+    const tx = await pool.connect(user1).RegisterWorker(laiKey);
+    const receipt = await tx.wait();
+    console.log("Gas used for RegisterWorker:", receipt.gasUsed.toString());
+
 
     const workerAddr = await pool.GetWorkerAddress(laiKey);
     expect(workerAddr).to.equal(user1.address);
