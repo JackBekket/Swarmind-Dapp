@@ -47,7 +47,7 @@ contract Pool is Ownable {
 
 
     mapping (string => address) worker_wallets;     // local_ai public key -> worker wallet address
-    mapping (address => string) wallets_workers;    // wallet address -> lai public key
+    mapping (address => string[]) wallets_workers;    // wallet address -> lai public key
     mapping (address => uint) user_deposits;
     mapping (string => bool) public blacklist; //address => banned (true/false)
     mapping (string => bool) public isApproved; //for private pools
@@ -60,7 +60,8 @@ contract Pool is Ownable {
         uint256 id,     
         uint256 llm_id,
         address worker,
-        uint256 llmTokens,
+        uint256 llmInputTokens,
+        uint256 llmOutputTokens,
         uint256 cost,
         uint256 processingTime,
         uint256 timestamp
@@ -76,10 +77,20 @@ contract Pool is Ownable {
         uint256 token_id;
         uint256 author_royalty;
         address author_wallet;
-        uint256 hw_price_per_token; // hardware provider is setting price per 1m tokens, so there should be conversion here.
+        uint256 hw_price_per_input_token;
+        uint256 hw_price_per_output_token;
         Pay_type pay_type_;
     }
 
+    //We need this to avoid "Stack too deep" in ProcessResponse
+    struct CostDetails {
+    uint256 hwpin;
+    uint256 hwpout;
+    uint256 cost_hw;
+    uint256 awp;
+    uint256 a_cost;
+    uint256 tokens_sum;
+}
 
     //LLM_meta[] llm_list;    // TODO: idk if we should use mapping or array.
     //SUGGESTION @daseinsucks: I say we use map, since for crud methods it'll be cheaper to fetch from map than iterate through array
@@ -93,26 +104,30 @@ contract Pool is Ownable {
     function GetTotalPrice(uint llm_id) public view returns (uint) {
         LLM_meta memory lm = GetMetaLLM(llm_id);
         uint ap = lm.author_royalty;
-        uint hwp = lm.hw_price_per_token;
-        uint tp = ap + hwp;
+        uint hwpin = lm.hw_price_per_input_token;
+        uint hwpout = lm.hw_price_per_output_token;
+        uint tp = ap + hwpin + hwpout;
         return tp;
     }
 
 
     // TODO: think about possible security hacks
-    function RegisterWorker(string memory lai_public_key) public {
-        require(!blacklist[lai_public_key], "This key is in blacklist");
-            bytes memory pub_key = bytes(wallets_workers[msg.sender]);
-            require (pub_key.length == 0);
-            wallets_workers[msg.sender] = lai_public_key;
-            worker_wallets[lai_public_key] = msg.sender;
-         if (pt== Pool_type.public_pool) {
-            isApproved[lai_public_key] = true;
-        } else {
-            isApproved[lai_public_key] = false;
-        }
-        emit NewWorker(msg.sender, isApproved[lai_public_key]);
+  function RegisterWorker(string memory lai_public_key) public {
+    require(!blacklist[lai_public_key], "This key is in blacklist");
+    require(worker_wallets[lai_public_key] == address(0), "Key already registered");
+    require(wallets_workers[msg.sender].length < 20, "Maximum number of workers (20) reached");
+
+    wallets_workers[msg.sender].push(lai_public_key);
+    worker_wallets[lai_public_key] = msg.sender;
+
+    if (pt == Pool_type.public_pool) {
+        isApproved[lai_public_key] = true;
+    } else {
+        isApproved[lai_public_key] = false;
     }
+
+    emit NewWorker(msg.sender, isApproved[lai_public_key]);
+}
 
     function GetWorkerAddress(string memory lai_id) public view returns (address) {
         address worker = worker_wallets[lai_id];
@@ -123,13 +138,20 @@ contract Pool is Ownable {
         isApproved[lai_public_key] = true;
     }
 
-    function Unregister() public  {
-        bytes memory pub_key = bytes(wallets_workers[msg.sender]);
-        require(pub_key.length!=0);
-        string memory lai_pub_key = wallets_workers[msg.sender];
-        delete wallets_workers[msg.sender];
-        delete worker_wallets[lai_pub_key];
+function Unregister(string memory lai_pub_key) public {
+    require(worker_wallets[lai_pub_key] == msg.sender, "Not your worker key");
+    string[] storage keys = wallets_workers[msg.sender];
+    for (uint i = 0; i < keys.length; i++) {
+        if (keccak256(bytes(keys[i])) == keccak256(bytes(lai_pub_key))) {
+            keys[i] = keys[keys.length - 1];
+            keys.pop();                     
+            break;
+        }
     }
+
+    delete worker_wallets[lai_pub_key];
+}
+
 
 
 
@@ -143,7 +165,7 @@ contract Pool is Ownable {
     }
 
 
-    function AddModel(uint token_id, uint hw_price) public onlyOwner  {
+    function AddModel(uint token_id, uint hw_price_in, uint hw_price_out) public onlyOwner  {
        LLMNFT.LLM memory llm_struct = nft.GetLLM(token_id);
        LLM_meta memory lm;
        Pay_type pt_;
@@ -157,7 +179,8 @@ contract Pool is Ownable {
        lm.author_royalty = llm_struct.royalty_price;
        lm.author_wallet = llm_struct.author_wallet;
        lm.token_id = token_id;
-       lm.hw_price_per_token = hw_price;
+       lm.hw_price_per_input_token = hw_price_in;
+       lm.hw_price_per_output_token = hw_price_out;
        //llm_list.push(lm);
        llm_list[token_id] = lm;
     }
@@ -192,7 +215,7 @@ contract Pool is Ownable {
         Pay_type pt_;
         uint max_context = llms.max_context_window;
         LLM_meta memory meta = GetMetaLLM(llm_id);
-        uint hw_price = meta.hw_price_per_token;
+        uint hw_price = meta.hw_price_per_input_token;
         //uint royalty = meta.author_royalty;
         uint price;
        if (lm_type == LLMNFT.Llm_type.text) {
@@ -213,40 +236,53 @@ contract Pool is Ownable {
     }
 
     
-    function ProcessResponse(uint request_id, string memory worker_id ,uint llm_id, uint256 llmTokens, uint processingTime) public  {
-        require(!blacklist[worker_id], "This worker is in blacklist"); 
-         require(isApproved[worker_id], "This worker is not yet approved"); 
-        uint tprice = GetTotalPrice(llm_id);
-        LLM_meta memory lm = GetMetaLLM(llm_id);
-        Pay_type pt_ = lm.pay_type_;
-        uint hwp;
-        uint cost_hw;
-        uint awp;
-        uint a_cost;
-        
-        if (pt_ == Pay_type.token) {
-            hwp = lm.hw_price_per_token;
-            cost_hw = hwp * llmTokens;
-            a_cost = lm.author_royalty * llmTokens;
-        } else {
-            hwp = lm.hw_price_per_token;
-            awp = lm.author_royalty;
-            cost_hw = hwp; // per request
-            a_cost = awp;
-        }
+    function ProcessResponse(
+    uint request_id,
+    string memory worker_id,
+    uint llm_id,
+    uint256 llmInputTokens,
+    uint256 llmOutputTokens,
+    uint processingTime
+) public {
+    require(!blacklist[worker_id], "This worker is in blacklist"); 
+    require(isApproved[worker_id], "This worker is not yet approved"); 
 
-        address worker = GetWorkerAddress(worker_id);
-        address author = lm.author_wallet;
-        
-        require (credit.transfer(worker,cost_hw));
-        require(credit.transfer(author,a_cost));
+    LLM_meta memory lm = GetMetaLLM(llm_id);
+    Pay_type pt_ = lm.pay_type_;
+    CostDetails memory cd;
 
-        uint timestamp = block.timestamp;
-
-        emit Response(request_id,llm_id,worker,llmTokens,tprice,processingTime,timestamp);
-        emit Payout(worker,llm_id,cost_hw);
-
+    if (pt_ == Pay_type.token) {
+        cd.tokens_sum = llmInputTokens + llmOutputTokens;
+        cd.hwpin = lm.hw_price_per_input_token;
+        cd.hwpout = lm.hw_price_per_output_token;
+        cd.cost_hw = cd.hwpin * llmInputTokens + cd.hwpout * llmOutputTokens;
+        cd.a_cost = lm.author_royalty * cd.tokens_sum;
+    } else {
+        cd.hwpin = lm.hw_price_per_input_token;
+        cd.awp = lm.author_royalty;
+        cd.cost_hw = cd.hwpin;
+        cd.a_cost = cd.awp;
     }
+
+    address worker = GetWorkerAddress(worker_id);
+    address author = lm.author_wallet;
+
+    require(credit.transfer(worker, cd.cost_hw));
+    require(credit.transfer(author, cd.a_cost));
+
+    emit Response(
+        request_id,
+        llm_id,
+        worker,
+        llmInputTokens,
+        llmOutputTokens,
+        cd.cost_hw + cd.a_cost,
+        processingTime,
+        block.timestamp
+    );
+
+    emit Payout(worker, llm_id, cd.cost_hw);
+}
     
 
 
