@@ -111,7 +111,7 @@ contract Pool is Ownable {
     }
 
 
-    // TODO: think about possible security hacks
+    
   function RegisterWorker(string memory lai_public_key) public {
     require(!blacklist[lai_public_key], "This key is in blacklist");
     require(worker_wallets[lai_public_key] == address(0), "Key already registered");
@@ -153,7 +153,8 @@ function Unregister(string memory lai_pub_key) public {
 }
 
 
-
+    //TODO:
+    // add Update method for worker
 
     // TODO: IMPORTANT -- change visibility to only Owner or only factory(?). idk what would be tipical deployment process prolly just onlyOwner works fine.
     function Ban(string memory lai_pub_key) public onlyOwner {
