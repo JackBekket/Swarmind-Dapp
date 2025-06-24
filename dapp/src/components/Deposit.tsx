@@ -44,14 +44,12 @@ const Deposit: React.FC = () => {
   
     try {
       await window.ethereum.request({ method: 'eth_requestAccounts' });
-      //TODO: uncomment as we fix our chain id...
 
-
-    /*   await window.ethereum.request({
+     await window.ethereum.request({
         method: 'wallet_addEthereumChain',
         params: [networkParams],
       });
-   */
+   
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId }],
@@ -60,7 +58,6 @@ const Deposit: React.FC = () => {
       alert('MetaMask connected and network switched!');
     } catch (error) {
       console.error('Connection or network switch error:', error);
-      alert('Error connecting or switching network.');
     }
   };
   
