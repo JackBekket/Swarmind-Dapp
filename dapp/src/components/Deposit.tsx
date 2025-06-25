@@ -3,24 +3,24 @@ import { ethers } from 'ethers';
 import {
   receiverAddress,
   swmAddress,
+  poolAddress,
   chainId,
   chainName,
   curName,
   curSymbol,
   curDec,
   chainRPC,
-  blockExplorer
+  blockExplorer,
+  permitDeadlineSeconds,
 } from '../constants';
-import { erc20Abi } from '../abis';
+import { erc20Abi, poolAbi } from '../abis';
 
-declare global {
-  interface Window {
-    ethereum: any;
-  }
-}
+
 
 const Deposit: React.FC = () => {
   const [amount, setAmount] = useState<number>(0);
+  const [transferFromAmount, setTransferFromAmount] = useState<number>(0);
+  const [depositAmount, setDepositAmount] = useState<number>(0);
 
   const connectWalletAndSwitchNetwork = async () => {
     if (!window.ethereum) {
@@ -28,85 +28,172 @@ const Deposit: React.FC = () => {
       window.location.href = 'https://metamask.io/download.html';
       return;
     }
-  
-  
-     const networkParams = {
-      chainId: chainId,
-      chainName: chainName,
-      nativeCurrency: {
-        name: curName,
-        symbol: curSymbol,
-        decimals: curDec,
-      },
+
+    const networkParams = {
+      chainId,
+      chainName,
+      nativeCurrency: { name: curName, symbol: curSymbol, decimals: curDec },
       rpcUrls: [chainRPC],
       blockExplorerUrls: [blockExplorer],
-    }; 
-  
+    };
+
     try {
       await window.ethereum.request({ method: 'eth_requestAccounts' });
-
-     await window.ethereum.request({
-        method: 'wallet_addEthereumChain',
-        params: [networkParams],
-      });
-   
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId }],
-      });
-  
+      await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [networkParams] });
+      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId }] });
       alert('MetaMask connected and network switched!');
     } catch (error) {
       console.error('Connection or network switch error:', error);
     }
   };
-  
-
 
   const transferSWM = async () => {
-    if (!window.ethereum) {
-      alert('MetaMask is not installed');
-      return;
-    }
-
+    if (!window.ethereum) return alert('MetaMask is not installed');
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       await provider.send('eth_requestAccounts', []);
       const signer = await provider.getSigner();
-
       const swmContract = new ethers.Contract(swmAddress, erc20Abi, signer);
-      const amountInWei = ethers.parseUnits(amount.toString(), 9); // SWM uses 9 decimals
-
-      const tx = await swmContract.transfer(receiverAddress, amountInWei);
+      const value = ethers.parseUnits(amount.toString(), 9);
+      const tx = await swmContract.transfer(receiverAddress, value);
       await tx.wait();
-
       alert('Transfer successful!');
     } catch (error: any) {
-      if (error.code === 4001) {
-        alert('Transaction was rejected by the user.');
-      } else {
-        console.error(error);
-        alert('An error occurred during the transfer.');
-      }
+      console.error(error);
+      alert(error.code === 4001 ? 'Transaction rejected.' : 'Error during transfer.');
+    }
+  };
+
+  const gaslessApproveWithPermit = async () => {
+    if (!window.ethereum) return alert('MetaMask not found');
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const owner = await signer.getAddress();
+      const contract = new ethers.Contract(swmAddress, erc20Abi, signer);
+      const nonce = await contract.nonces(owner);
+      const deadline = Math.floor(Date.now() / 1000) + permitDeadlineSeconds;
+      const value = ethers.parseUnits(transferFromAmount.toString(), 9);
+      const { chainId: currentChain } = await provider.getNetwork();
+
+      const domain = {
+        name: await contract.name(),
+        version: '1',
+        chainId: currentChain,
+        verifyingContract: swmAddress,
+      };
+      const types = {
+        Permit: [
+          { name: 'owner', type: 'address' },
+          { name: 'spender', type: 'address' },
+          { name: 'value', type: 'uint256' },
+          { name: 'nonce', type: 'uint256' },
+          { name: 'deadline', type: 'uint256' },
+        ],
+      };
+      const message = { owner, spender: receiverAddress, value: value.toString(), nonce: nonce.toString(), deadline };
+
+      const signature = await signer.signTypedData(domain, types, message);
+      const sigObj = ethers.Signature.from(signature);
+      const { v, r, s } = sigObj;
+
+      const tx = await contract.permit(owner, receiverAddress, value, deadline, v, r, s);
+      await tx.wait();
+      alert('Gasless approve (permit) successful!');
+    } catch (error) {
+      console.error(error);
+      alert('Permit failed.');
+    }
+  };
+
+
+  const transferFromSWM = async () => {
+    if (!window.ethereum) return alert('MetaMask is not installed');
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const swmContract = new ethers.Contract(swmAddress, erc20Abi, signer);
+      const from = await signer.getAddress();
+      const value = ethers.parseUnits(transferFromAmount.toString(), 9);
+      const tx = await swmContract.transferFrom(from, receiverAddress, value);
+      await tx.wait();
+      alert('transferFrom successful!');
+    } catch (error) {
+      console.error(error);
+      alert('transferFrom failed.');
+    }
+  };
+
+  const depositCredit = async () => {
+    if (!window.ethereum) return alert('MetaMask is not installed');
+    try {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const pool = new ethers.Contract(poolAddress, poolAbi, signer);
+      const value = ethers.parseUnits(depositAmount.toString(), 9);
+      const tx = await pool.DepositCredit(value);
+      await tx.wait();
+      alert('DepositCredit successful!');
+    } catch (error) {
+      console.error(error);
+      alert('DepositCredit failed.');
     }
   };
 
   return (
-    <div>
-      <h1>SWM Deposit DApp</h1>
+    <div className="p-4 space-y-6">
+      <h1 className="text-xl font-bold">SWM Deposit DApp</h1>
 
-      <button onClick={connectWalletAndSwitchNetwork}>
-        Connect MetaMask & Switch Network
+      <button onClick={connectWalletAndSwitchNetwork} className="px-4 py-2 rounded shadow">
+        Connect & Switch Network
       </button>
 
-      <input
-        type="number"
-        value={amount}
-        onChange={(e) => setAmount(Number(e.target.value))}
-        placeholder="Amount"
-      />
+      <section className="space-y-2">
+        <h3 className="font-semibold">Transfer SWM</h3>
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(Number(e.target.value))}
+          placeholder="Amount"
+          className="border p-2 rounded"
+        />
+        <button onClick={transferSWM} className="px-4 py-2 rounded shadow">
+          Transfer
+        </button>
+      </section>
 
-      <button onClick={transferSWM}>Transfer SWM</button>
+      <section className="space-y-2">
+        <h3 className="font-semibold">Approve + TransferFrom (Gasless)</h3>
+        <input
+          type="number"
+          value={transferFromAmount}
+          onChange={(e) => setTransferFromAmount(Number(e.target.value))}
+          placeholder="Amount"
+          className="border p-2 rounded"
+        />
+        <div className="flex space-x-2">
+          <button onClick={gaslessApproveWithPermit} className="px-4 py-2 rounded shadow">
+            Permit (Gasless)
+          </button>
+          <button onClick={transferFromSWM} className="px-4 py-2 rounded shadow">
+            TransferFrom
+          </button>
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h3 className="font-semibold">Deposit Credit</h3>
+        <input
+          type="number"
+          value={depositAmount}
+          onChange={(e) => setDepositAmount(Number(e.target.value))}
+          placeholder="Amount"
+          className="border p-2 rounded"
+        />
+        <button onClick={depositCredit} className="px-4 py-2 rounded shadow">
+          DepositCredit
+        </button>
+      </section>
     </div>
   );
 };

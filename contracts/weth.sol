@@ -10,9 +10,16 @@ contract WETH is ERC20 {
         _mint(msg.sender, msg.value);
     }
 
-    function withdraw(uint256 amount) external {
+    function unwrap(uint256 amount) external {
         require(balanceOf(msg.sender) >= amount, "Not enough WETH");
         _burn(msg.sender, amount);
         payable(msg.sender).transfer(amount);
+    }
+
+    function unwrapTo(uint256 amount, address to) external {
+        require(to != address(0), "Invalid recipient");
+        require(balanceOf(msg.sender) >= amount, "Not enough WETH");
+        _burn(msg.sender, amount);
+        payable(to).transfer(amount);
     }
 }

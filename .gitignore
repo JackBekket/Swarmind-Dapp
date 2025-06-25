@@ -48,7 +48,8 @@ ignition/deployments/chain-31337
 
 # production
 /build
-
+build-info
+@openzeppelin
 # misc
 .DS_Store
 .env.local
