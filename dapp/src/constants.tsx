@@ -6,7 +6,7 @@ export const poolAddress = '0x848624851ade3e984993E4805fD36Bca84CE1C0A'; //Pool 
 export const permitDeadlineSeconds = 3000
 
 export const chainId = '0x142F55'; //1322837 in hex
-export const chainName = 'Kurtosis';
+export const chainName = 'Swarm';
 
 export const curName = 'Ethereum';
 export const curSymbol = 'ETH';
