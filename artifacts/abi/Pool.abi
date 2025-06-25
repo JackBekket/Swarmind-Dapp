@@ -530,6 +530,24 @@
     "inputs": [
       {
         "internalType": "string",
+        "name": "old_lai_pub_key",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "new_lai_pub_key",
+        "type": "string"
+      }
+    ],
+    "name": "UpdateWorker",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
         "name": "",
         "type": "string"
       }
