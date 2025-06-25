@@ -21,6 +21,7 @@ const Deposit: React.FC = () => {
   const [amount, setAmount] = useState<number>(0);
   const [transferFromAmount, setTransferFromAmount] = useState<number>(0);
   const [depositAmount, setDepositAmount] = useState<number>(0);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
 
   const connectWalletAndSwitchNetwork = async () => {
     if (!window.ethereum) {
@@ -41,6 +42,7 @@ const Deposit: React.FC = () => {
       await window.ethereum.request({ method: 'eth_requestAccounts' });
       await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [networkParams] });
       await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId }] });
+      setIsConnected(true);
       alert('MetaMask connected and network switched!');
     } catch (error) {
       console.error('Connection or network switch error:', error);
@@ -91,13 +93,13 @@ const Deposit: React.FC = () => {
           { name: 'deadline', type: 'uint256' },
         ],
       };
-      const message = { owner, spender: receiverAddress, value: value.toString(), nonce: nonce.toString(), deadline };
+      const message = { owner, spender: poolAddress, value: value.toString(), nonce: nonce.toString(), deadline };
 
       const signature = await signer.signTypedData(domain, types, message);
       const sigObj = ethers.Signature.from(signature);
       const { v, r, s } = sigObj;
 
-      const tx = await contract.permit(owner, receiverAddress, value, deadline, v, r, s);
+      const tx = await contract.permit(owner, poolAddress, value, deadline, v, r, s);
       await tx.wait();
       alert('Gasless approve (permit) successful!');
     } catch (error) {
@@ -106,7 +108,7 @@ const Deposit: React.FC = () => {
     }
   };
 
-
+  //TODO: do we actually need this?
   const transferFromSWM = async () => {
     if (!window.ethereum) return alert('MetaMask is not installed');
     try {
@@ -144,9 +146,15 @@ const Deposit: React.FC = () => {
     <div className="p-4 space-y-6">
       <h1 className="text-xl font-bold">SWM Deposit DApp</h1>
 
-      <button onClick={connectWalletAndSwitchNetwork} className="px-4 py-2 rounded shadow">
-        Connect & Switch Network
-      </button>
+      {isConnected ? (
+  <div className="px-4 py-2 rounded shadow bg-green-500 text-white inline-block">
+    Connected!
+  </div>
+) : (
+  <button onClick={connectWalletAndSwitchNetwork} className="px-4 py-2 rounded shadow">
+    Connect & Switch Network
+  </button>
+)}
 
       <section className="space-y-2">
         <h3 className="font-semibold">Transfer SWM</h3>
@@ -175,9 +183,13 @@ const Deposit: React.FC = () => {
           <button onClick={gaslessApproveWithPermit} className="px-4 py-2 rounded shadow">
             Permit (Gasless)
           </button>
-          <button onClick={transferFromSWM} className="px-4 py-2 rounded shadow">
-            TransferFrom
-          </button>
+          <button
+  onClick={transferFromSWM}
+  className="px-4 py-2 rounded shadow bg-gray-400 cursor-not-allowed"
+  disabled
+>
+  TransferFrom
+</button>
         </div>
       </section>
 
