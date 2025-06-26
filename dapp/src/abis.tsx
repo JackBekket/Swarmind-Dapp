@@ -1223,4 +1223,45 @@ export const erc20Abi = [
     }
   ]
   
+  export const llmnftAbi = [
+    {
+      "inputs": [
+        { "internalType": "string", "name": "hf_id_", "type": "string" },
+        { "internalType": "uint256", "name": "price", "type": "uint256" },
+        { "internalType": "address", "name": "wallet", "type": "address" },
+        { "internalType": "uint8", "name": "model_type_", "type": "uint8" },
+        { "internalType": "uint256", "name": "max_context", "type": "uint256" }
+      ],
+      "name": "CreateLLM_NFT",
+      "outputs": [
+        { "internalType": "uint256", "name": "", "type": "uint256" }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "token_id", "type": "uint256" }
+      ],
+      "name": "GetLLM",
+      "outputs": [
+        {
+          "components": [
+            { "internalType": "string", "name": "author", "type": "string" },
+            { "internalType": "string", "name": "hfid", "type": "string" },
+            { "internalType": "uint256", "name": "royalty_price", "type": "uint256" },
+            { "internalType": "address", "name": "author_wallet", "type": "address" },
+            { "internalType": "uint8", "name": "model_type", "type": "uint8" },
+            { "internalType": "uint256", "name": "max_context_window", "type": "uint256" }
+          ],
+          "internalType": "struct LLMNFT.LLM",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]
+  
   
