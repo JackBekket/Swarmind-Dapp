@@ -15,10 +15,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 
 contract Pool is Ownable {
-    constructor(address llm_nft, address credit_) Ownable(msg.sender) {
-        nft = LLMNFT(llm_nft);
-        credit = IERC20(credit_);
-    }
+  constructor(address llm_nft, address credit_, address hfswm_) Ownable(msg.sender) {
+    nft = LLMNFT(llm_nft);
+    credit = IERC20(credit_);
+    hfswm = IERC20(hfswm_);
+}
 
     //global vars
     enum Pool_type {
@@ -36,6 +37,10 @@ contract Pool is Ownable {
     LLMNFT nft;
 
     IERC20 credit;
+    
+    //huggingface token
+    IERC20 public hfswm;
+
 
     uint service_fee_percent = 1; // 1%
     // TODO: add constant service address where we will collect fee
@@ -46,6 +51,7 @@ contract Pool is Ownable {
     mapping(address => uint) user_deposits;
     mapping(string => bool) public blacklist; //address => banned (true/false)
     mapping(string => bool) public isApproved; //for private pools
+    mapping(address => bool) public HFwhitelist; //providers from huggingface
     //TODO: events
 
     event Deposit(address user, uint amount);
@@ -193,6 +199,15 @@ contract Pool is Ownable {
         blacklist[lai_pub_key] = false;
     }
 
+    function AddToHFWhitelist(address addr) public onlyOwner {
+    HFwhitelist[addr] = true;
+}
+
+    function RemoveFromHFWhitelist(address addr) public onlyOwner {
+            HFwhitelist[addr] = false;
+}
+
+
     function AddModel(
         uint token_id,
         uint hw_price_in,
@@ -275,54 +290,64 @@ contract Pool is Ownable {
     }
 
     function ProcessResponse(
-        uint request_id,
-        string memory worker_id,
-        uint llm_id,
-        uint256 llmInputTokens,
-        uint256 llmOutputTokens,
-        uint processingTime
-    ) public {
-        require(!blacklist[worker_id], "This worker is in blacklist");
-        require(isApproved[worker_id], "This worker is not yet approved");
+    uint request_id,
+    string memory worker_id,
+    uint llm_id,
+    uint256 llmInputTokens,
+    uint256 llmOutputTokens,
+    uint processingTime
+) public {
+    require(!blacklist[worker_id], "This worker is in blacklist");
+    require(isApproved[worker_id], "This worker is not yet approved");
 
-        LLM_meta memory lm = GetMetaLLM(llm_id);
-        Pay_type pt_ = lm.pay_type_;
-        CostDetails memory cd;
+    LLM_meta memory lm = GetMetaLLM(llm_id);
+    Pay_type pt_ = lm.pay_type_;
+    CostDetails memory cd;
 
-        if (pt_ == Pay_type.token) {
-            cd.tokens_sum = llmInputTokens + llmOutputTokens;
-            cd.hwpin = lm.hw_price_per_input_token;
-            cd.hwpout = lm.hw_price_per_output_token;
-            cd.cost_hw =
-                cd.hwpin *
-                llmInputTokens +
-                cd.hwpout *
-                llmOutputTokens;
-            cd.a_cost = lm.author_royalty * cd.tokens_sum;
-        } else {
-            cd.hwpin = lm.hw_price_per_input_token;
-            cd.awp = lm.author_royalty;
-            cd.cost_hw = cd.hwpin;
-            cd.a_cost = cd.awp;
-        }
-
-        address worker = GetWorkerAddress(worker_id);
-        address author = lm.author_wallet;
-
-        require(credit.transfer(worker, cd.cost_hw));
-        require(credit.transfer(author, cd.a_cost));
-
-        emit Response(
-            request_id,
-            llm_id,
-            worker,
-            llmInputTokens,
-            llmOutputTokens,
-            cd.cost_hw + cd.a_cost,
-            processingTime,
-            block.timestamp
-        );
-
-        emit Payout(worker, llm_id, cd.cost_hw);
+    if (pt_ == Pay_type.token) {
+        cd.tokens_sum = llmInputTokens + llmOutputTokens;
+        cd.hwpin = lm.hw_price_per_input_token;
+        cd.hwpout = lm.hw_price_per_output_token;
+        cd.cost_hw =
+            cd.hwpin *
+            llmInputTokens +
+            cd.hwpout *
+            llmOutputTokens;
+        cd.a_cost = lm.author_royalty * cd.tokens_sum;
+    } else {
+        cd.hwpin = lm.hw_price_per_input_token;
+        cd.awp = lm.author_royalty;
+        cd.cost_hw = cd.hwpin;
+        cd.a_cost = cd.awp;
     }
+
+    address worker = GetWorkerAddress(worker_id);
+    address author = lm.author_wallet;
+
+    if (HFwhitelist[worker]) {
+        require(hfswm.transfer(worker, cd.cost_hw), "HFSWM to worker failed");
+    } else {
+        require(credit.transfer(worker, cd.cost_hw), "Credit to worker failed");
+    }
+
+
+    if (HFwhitelist[author]) {
+        require(hfswm.transfer(author, cd.a_cost), "HFSWM to author failed");
+    } else {
+        require(credit.transfer(author, cd.a_cost), "Credit to author failed");
+    }
+
+    emit Response(
+        request_id,
+        llm_id,
+        worker,
+        llmInputTokens,
+        llmOutputTokens,
+        cd.cost_hw + cd.a_cost,
+        processingTime,
+        block.timestamp
+    );
+
+    emit Payout(worker, llm_id, cd.cost_hw);
+}
 }
