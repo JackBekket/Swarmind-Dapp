@@ -26,6 +26,7 @@ var (
 	_ = common.Big1
 	_ = types.BloomLookup
 	_ = event.NewSubscription
+	_ = abi.ConvertType
 )
 
 // PoolLLMMeta is an auto generated low-level Go binding around an user-defined struct.
@@ -40,7 +41,7 @@ type PoolLLMMeta struct {
 
 // PoolMetaData contains all meta data concerning the Pool contract.
 var PoolMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"llm_nft\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"credit_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Deposit\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"worker\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isApproved\",\"type\":\"bool\"}],\"name\":\"NewWorker\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"provider\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Payout\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"worker\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"llmInputTokens\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"llmOutputTokens\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"cost\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"processingTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"Response\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"token_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_in\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_out\",\"type\":\"uint256\"}],\"name\":\"AddModel\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_public_key\",\"type\":\"string\"}],\"name\":\"ApproveWorker\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_pub_key\",\"type\":\"string\"}],\"name\":\"Ban\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"hw_cost\",\"type\":\"uint256\"}],\"name\":\"CalculateServiceFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"}],\"name\":\"DeleteModel\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DepositCredit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"}],\"name\":\"GetMetaLLM\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"token_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"author_royalty\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"author_wallet\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_per_input_token\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_per_output_token\",\"type\":\"uint256\"},{\"internalType\":\"enumPool.Pay_type\",\"name\":\"pay_type_\",\"type\":\"uint8\"}],\"internalType\":\"structPool.LLM_meta\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"}],\"name\":\"GetModel\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"token_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"author_royalty\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"author_wallet\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_per_input_token\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_per_output_token\",\"type\":\"uint256\"},{\"internalType\":\"enumPool.Pay_type\",\"name\":\"pay_type_\",\"type\":\"uint8\"}],\"internalType\":\"structPool.LLM_meta\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"}],\"name\":\"GetTotalPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_id\",\"type\":\"string\"}],\"name\":\"GetWorkerAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"Pre_request\",\"outputs\":[],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"request_id\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"worker_id\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"llmInputTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"llmOutputTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"processingTime\",\"type\":\"uint256\"}],\"name\":\"ProcessResponse\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_public_key\",\"type\":\"string\"}],\"name\":\"RegisterWorker\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_pub_key\",\"type\":\"string\"}],\"name\":\"Unban\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_pub_key\",\"type\":\"string\"}],\"name\":\"Unregister\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"new_royalty\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"new_address\",\"type\":\"address\"}],\"name\":\"UpdateModel\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"old_lai_pub_key\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"new_lai_pub_key\",\"type\":\"string\"}],\"name\":\"UpdateWorker\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"blacklist\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"isApproved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"llm_nft\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"credit_\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"hfswm_\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Deposit\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"worker\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"isApproved\",\"type\":\"bool\"}],\"name\":\"NewWorker\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"provider\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Payout\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"worker\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"llmInputTokens\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"llmOutputTokens\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"cost\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"processingTime\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"Response\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"token_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_in\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_out\",\"type\":\"uint256\"}],\"name\":\"AddModel\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"AddToHFWhitelist\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_public_key\",\"type\":\"string\"}],\"name\":\"ApproveWorker\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_pub_key\",\"type\":\"string\"}],\"name\":\"Ban\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"hw_cost\",\"type\":\"uint256\"}],\"name\":\"CalculateServiceFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"}],\"name\":\"DeleteModel\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"DepositCredit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"}],\"name\":\"GetMetaLLM\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"token_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"author_royalty\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"author_wallet\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_per_input_token\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_per_output_token\",\"type\":\"uint256\"},{\"internalType\":\"enumPool.Pay_type\",\"name\":\"pay_type_\",\"type\":\"uint8\"}],\"internalType\":\"structPool.LLM_meta\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"}],\"name\":\"GetModel\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"token_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"author_royalty\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"author_wallet\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_per_input_token\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"hw_price_per_output_token\",\"type\":\"uint256\"},{\"internalType\":\"enumPool.Pay_type\",\"name\":\"pay_type_\",\"type\":\"uint8\"}],\"internalType\":\"structPool.LLM_meta\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"}],\"name\":\"GetTotalPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_id\",\"type\":\"string\"}],\"name\":\"GetWorkerAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"HFwhitelist\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"}],\"name\":\"Pre_request\",\"outputs\":[],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"request_id\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"worker_id\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"llmInputTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"llmOutputTokens\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"processingTime\",\"type\":\"uint256\"}],\"name\":\"ProcessResponse\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_public_key\",\"type\":\"string\"}],\"name\":\"RegisterWorker\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"addr\",\"type\":\"address\"}],\"name\":\"RemoveFromHFWhitelist\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_pub_key\",\"type\":\"string\"}],\"name\":\"Unban\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"lai_pub_key\",\"type\":\"string\"}],\"name\":\"Unregister\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"llm_id\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"new_royalty\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"new_address\",\"type\":\"address\"}],\"name\":\"UpdateModel\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"old_lai_pub_key\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"new_lai_pub_key\",\"type\":\"string\"}],\"name\":\"UpdateWorker\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"blacklist\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"hfswm\",\"outputs\":[{\"internalType\":\"contractIERC20\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"isApproved\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // PoolABI is the input ABI used to generate the binding from.
@@ -144,11 +145,11 @@ func NewPoolFilterer(address common.Address, filterer bind.ContractFilterer) (*P
 
 // bindPool binds a generic wrapper to an already deployed contract.
 func bindPool(address common.Address, caller bind.ContractCaller, transactor bind.ContractTransactor, filterer bind.ContractFilterer) (*bind.BoundContract, error) {
-	parsed, err := abi.JSON(strings.NewReader(PoolABI))
+	parsed, err := PoolMetaData.GetAbi()
 	if err != nil {
 		return nil, err
 	}
-	return bind.NewBoundContract(address, parsed, caller, transactor, filterer), nil
+	return bind.NewBoundContract(address, *parsed, caller, transactor, filterer), nil
 }
 
 // Call invokes the (constant) contract method with params as input values and
@@ -344,6 +345,37 @@ func (_Pool *PoolCallerSession) GetWorkerAddress(lai_id string) (common.Address,
 	return _Pool.Contract.GetWorkerAddress(&_Pool.CallOpts, lai_id)
 }
 
+// HFwhitelist is a free data retrieval call binding the contract method 0xb083de54.
+//
+// Solidity: function HFwhitelist(address ) view returns(bool)
+func (_Pool *PoolCaller) HFwhitelist(opts *bind.CallOpts, arg0 common.Address) (bool, error) {
+	var out []interface{}
+	err := _Pool.contract.Call(opts, &out, "HFwhitelist", arg0)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// HFwhitelist is a free data retrieval call binding the contract method 0xb083de54.
+//
+// Solidity: function HFwhitelist(address ) view returns(bool)
+func (_Pool *PoolSession) HFwhitelist(arg0 common.Address) (bool, error) {
+	return _Pool.Contract.HFwhitelist(&_Pool.CallOpts, arg0)
+}
+
+// HFwhitelist is a free data retrieval call binding the contract method 0xb083de54.
+//
+// Solidity: function HFwhitelist(address ) view returns(bool)
+func (_Pool *PoolCallerSession) HFwhitelist(arg0 common.Address) (bool, error) {
+	return _Pool.Contract.HFwhitelist(&_Pool.CallOpts, arg0)
+}
+
 // PreRequest is a free data retrieval call binding the contract method 0xb9359ea2.
 //
 // Solidity: function Pre_request(uint256 llm_id, address user) view returns()
@@ -402,6 +434,37 @@ func (_Pool *PoolSession) Blacklist(arg0 string) (bool, error) {
 // Solidity: function blacklist(string ) view returns(bool)
 func (_Pool *PoolCallerSession) Blacklist(arg0 string) (bool, error) {
 	return _Pool.Contract.Blacklist(&_Pool.CallOpts, arg0)
+}
+
+// Hfswm is a free data retrieval call binding the contract method 0xe03ec511.
+//
+// Solidity: function hfswm() view returns(address)
+func (_Pool *PoolCaller) Hfswm(opts *bind.CallOpts) (common.Address, error) {
+	var out []interface{}
+	err := _Pool.contract.Call(opts, &out, "hfswm")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
+}
+
+// Hfswm is a free data retrieval call binding the contract method 0xe03ec511.
+//
+// Solidity: function hfswm() view returns(address)
+func (_Pool *PoolSession) Hfswm() (common.Address, error) {
+	return _Pool.Contract.Hfswm(&_Pool.CallOpts)
+}
+
+// Hfswm is a free data retrieval call binding the contract method 0xe03ec511.
+//
+// Solidity: function hfswm() view returns(address)
+func (_Pool *PoolCallerSession) Hfswm() (common.Address, error) {
+	return _Pool.Contract.Hfswm(&_Pool.CallOpts)
 }
 
 // IsApproved is a free data retrieval call binding the contract method 0xf31fbc9f.
@@ -485,6 +548,27 @@ func (_Pool *PoolSession) AddModel(token_id *big.Int, hw_price_in *big.Int, hw_p
 // Solidity: function AddModel(uint256 token_id, uint256 hw_price_in, uint256 hw_price_out) returns()
 func (_Pool *PoolTransactorSession) AddModel(token_id *big.Int, hw_price_in *big.Int, hw_price_out *big.Int) (*types.Transaction, error) {
 	return _Pool.Contract.AddModel(&_Pool.TransactOpts, token_id, hw_price_in, hw_price_out)
+}
+
+// AddToHFWhitelist is a paid mutator transaction binding the contract method 0xba68ce9c.
+//
+// Solidity: function AddToHFWhitelist(address addr) returns()
+func (_Pool *PoolTransactor) AddToHFWhitelist(opts *bind.TransactOpts, addr common.Address) (*types.Transaction, error) {
+	return _Pool.contract.Transact(opts, "AddToHFWhitelist", addr)
+}
+
+// AddToHFWhitelist is a paid mutator transaction binding the contract method 0xba68ce9c.
+//
+// Solidity: function AddToHFWhitelist(address addr) returns()
+func (_Pool *PoolSession) AddToHFWhitelist(addr common.Address) (*types.Transaction, error) {
+	return _Pool.Contract.AddToHFWhitelist(&_Pool.TransactOpts, addr)
+}
+
+// AddToHFWhitelist is a paid mutator transaction binding the contract method 0xba68ce9c.
+//
+// Solidity: function AddToHFWhitelist(address addr) returns()
+func (_Pool *PoolTransactorSession) AddToHFWhitelist(addr common.Address) (*types.Transaction, error) {
+	return _Pool.Contract.AddToHFWhitelist(&_Pool.TransactOpts, addr)
 }
 
 // ApproveWorker is a paid mutator transaction binding the contract method 0x431f90f3.
@@ -611,6 +695,27 @@ func (_Pool *PoolSession) RegisterWorker(lai_public_key string) (*types.Transact
 // Solidity: function RegisterWorker(string lai_public_key) returns()
 func (_Pool *PoolTransactorSession) RegisterWorker(lai_public_key string) (*types.Transaction, error) {
 	return _Pool.Contract.RegisterWorker(&_Pool.TransactOpts, lai_public_key)
+}
+
+// RemoveFromHFWhitelist is a paid mutator transaction binding the contract method 0x00345d3d.
+//
+// Solidity: function RemoveFromHFWhitelist(address addr) returns()
+func (_Pool *PoolTransactor) RemoveFromHFWhitelist(opts *bind.TransactOpts, addr common.Address) (*types.Transaction, error) {
+	return _Pool.contract.Transact(opts, "RemoveFromHFWhitelist", addr)
+}
+
+// RemoveFromHFWhitelist is a paid mutator transaction binding the contract method 0x00345d3d.
+//
+// Solidity: function RemoveFromHFWhitelist(address addr) returns()
+func (_Pool *PoolSession) RemoveFromHFWhitelist(addr common.Address) (*types.Transaction, error) {
+	return _Pool.Contract.RemoveFromHFWhitelist(&_Pool.TransactOpts, addr)
+}
+
+// RemoveFromHFWhitelist is a paid mutator transaction binding the contract method 0x00345d3d.
+//
+// Solidity: function RemoveFromHFWhitelist(address addr) returns()
+func (_Pool *PoolTransactorSession) RemoveFromHFWhitelist(addr common.Address) (*types.Transaction, error) {
+	return _Pool.Contract.RemoveFromHFWhitelist(&_Pool.TransactOpts, addr)
 }
 
 // Unban is a paid mutator transaction binding the contract method 0xbad3191a.
