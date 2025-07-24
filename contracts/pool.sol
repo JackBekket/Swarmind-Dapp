@@ -5,6 +5,7 @@ pragma solidity ^0.8.28;
 //import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./LLMNFT.sol";
 import "./FeesCalculator.sol";
+import "./hfswm.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -18,7 +19,7 @@ contract Pool is Ownable {
   constructor(address llm_nft, address credit_, address hfswm_) Ownable(msg.sender) {
     nft = LLMNFT(llm_nft);
     credit = IERC20(credit_);
-    hfswm = IERC20(hfswm_);
+    hfswm = Cred(hfswm_);
 }
 
     //global vars
@@ -39,7 +40,7 @@ contract Pool is Ownable {
     IERC20 credit;
     
     //huggingface token
-    IERC20 public hfswm;
+    Cred public hfswm;
 
 
     uint service_fee_percent = 1; // 1%
@@ -325,14 +326,14 @@ contract Pool is Ownable {
     address author = lm.author_wallet;
 
     if (HFwhitelist[worker]) {
-        require(hfswm.transfer(worker, cd.cost_hw), "HFSWM to worker failed");
+      hfswm.mint(worker, cd.cost_hw);
     } else {
         require(credit.transfer(worker, cd.cost_hw), "Credit to worker failed");
     }
 
 
     if (HFwhitelist[author]) {
-        require(hfswm.transfer(author, cd.a_cost), "HFSWM to author failed");
+      hfswm.mint(author, cd.a_cost);
     } else {
         require(credit.transfer(author, cd.a_cost), "Credit to author failed");
     }

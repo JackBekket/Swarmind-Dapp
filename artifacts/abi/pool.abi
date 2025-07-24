@@ -618,7 +618,7 @@
     "name": "hfswm",
     "outputs": [
       {
-        "internalType": "contract IERC20",
+        "internalType": "contract Cred",
         "name": "",
         "type": "address"
       }
