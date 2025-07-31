@@ -19,7 +19,7 @@ contract Pool is Ownable {
   constructor(address llm_nft, address credit_, address hfswm_) Ownable(msg.sender) {
     nft = LLMNFT(llm_nft);
     credit = IERC20(credit_);
-    hfswm = Cred(hfswm_);
+    hfswm = HFSWM(hfswm_);
 }
 
     //global vars
@@ -40,7 +40,7 @@ contract Pool is Ownable {
     IERC20 credit;
     
     //huggingface token
-    Cred public hfswm;
+    HFSWM public hfswm;
 
 
     uint service_fee_percent = 1; // 1%
