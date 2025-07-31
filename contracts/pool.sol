@@ -19,7 +19,7 @@ contract Pool is Ownable {
   constructor(address llm_nft, address credit_, address hfswm_) Ownable(msg.sender) {
     nft = LLMNFT(llm_nft);
     credit = IERC20(credit_);
-    hfswm = Cred(hfswm_);
+    hfswm = HFSWM(hfswm_);
 }
 
     //global vars
@@ -40,7 +40,7 @@ contract Pool is Ownable {
     IERC20 credit;
     
     //huggingface token
-    Cred public hfswm;
+    HFSWM public hfswm;
 
 
     uint service_fee_percent = 1; // 1%
@@ -49,7 +49,6 @@ contract Pool is Ownable {
 
     mapping(string => address) worker_wallets; // local_ai public key -> worker wallet address
     mapping(address => string[]) wallets_workers; // wallet address -> lai public key
-    mapping(address => uint) user_deposits;
     mapping(string => bool) public blacklist; //address => banned (true/false)
     mapping(string => bool) public isApproved; //for private pools
     mapping(address => bool) public HFwhitelist; //providers from huggingface
@@ -256,7 +255,6 @@ contract Pool is Ownable {
 
     function DepositCredit(uint amount) public {
         require(credit.transferFrom(msg.sender, address(this), amount));
-        user_deposits[msg.sender] += amount;
         emit Deposit(msg.sender, amount);
     }
 
@@ -277,8 +275,9 @@ contract Pool is Ownable {
             pt_ = Pay_type.request;
             price = hw_price * 1;
         }
-        uint balance = user_deposits[user];
-        require(balance >= price, "user balance below max context window");
+    
+        uint balance = credit.balanceOf(user);
+         require(balance >= price, "ERC20: insufficient balance");
     }
 
     function CalculateServiceFee(uint hw_cost) public view returns (uint) {

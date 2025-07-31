@@ -618,7 +618,7 @@
     "name": "hfswm",
     "outputs": [
       {
-        "internalType": "contract Cred",
+        "internalType": "contract HFSWM",
         "name": "",
         "type": "address"
       }
