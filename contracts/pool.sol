@@ -159,36 +159,40 @@ contract Pool is Ownable {
     }
 
     function UpdateWorker(
-        string memory old_lai_pub_key,
-        string memory new_lai_pub_key
-    ) public {
-        require(
-            worker_wallets[old_lai_pub_key] == msg.sender,
-            "Not your worker key"
-        );
-        require(
-            worker_wallets[new_lai_pub_key] == address(0),
-            "New key already registered"
-        );
-        require(!blacklist[new_lai_pub_key], "New key is blacklisted");
+    string memory old_lai_pub_key,
+    string memory new_lai_pub_key
+) public {
+    require(
+        worker_wallets[old_lai_pub_key] == msg.sender,
+        "Not your worker key"
+    );
+    require(
+        worker_wallets[new_lai_pub_key] == address(0),
+        "New key already registered"
+    );
+    require(!blacklist[new_lai_pub_key], "New key is blacklisted");
 
-        string[] storage keys = wallets_workers[msg.sender];
-        for (uint i = 0; i < keys.length; i++) {
-            if (
-                keccak256(bytes(keys[i])) == keccak256(bytes(old_lai_pub_key))
-            ) {
-                keys[i] = new_lai_pub_key;
-                break;
-            }
-            delete worker_wallets[old_lai_pub_key];
-            worker_wallets[new_lai_pub_key] = msg.sender;
+    string[] storage keys = wallets_workers[msg.sender];
+    bool updated = false;
 
-            isApproved[new_lai_pub_key] = isApproved[old_lai_pub_key];
-            delete isApproved[old_lai_pub_key];
-
-            emit NewWorker(msg.sender, isApproved[new_lai_pub_key]);
+    for (uint i = 0; i < keys.length; i++) {
+        if (keccak256(bytes(keys[i])) == keccak256(bytes(old_lai_pub_key))) {
+            keys[i] = new_lai_pub_key;
+            updated = true;
+            break;
         }
     }
+
+    require(updated, "Old key not found");
+
+    delete worker_wallets[old_lai_pub_key];
+    worker_wallets[new_lai_pub_key] = msg.sender;
+
+    isApproved[new_lai_pub_key] = isApproved[old_lai_pub_key];
+    delete isApproved[old_lai_pub_key];
+
+    emit NewWorker(msg.sender, isApproved[new_lai_pub_key]);
+}
 
     // TODO: IMPORTANT -- change visibility to only Owner or only factory(?). idk what would be tipical deployment process prolly just onlyOwner works fine.
     function Ban(string memory lai_pub_key) public onlyOwner {
