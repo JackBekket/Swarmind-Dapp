@@ -52,6 +52,7 @@ contract Pool is Ownable {
     mapping(string => bool) public blacklist; //address => banned (true/false)
     mapping(string => bool) public isApproved; //for private pools
     mapping(address => bool) public HFwhitelist; //providers from huggingface
+    mapping(address => uint256) public userBalances; 
     //TODO: events
 
     event Deposit(address user, uint amount);
@@ -242,6 +243,10 @@ contract Pool is Ownable {
         return llm_list[llm_id];
     }
 
+    function GetUserBalance(address user) public view returns (uint256) {
+    return userBalances[user];
+}
+
     function UpdateModel(
         uint256 llm_id,
         uint new_royalty,
@@ -257,32 +262,29 @@ contract Pool is Ownable {
         delete llm_list[llm_id];
     }
 
-    function DepositCredit(uint amount) public {
-        require(credit.transferFrom(msg.sender, address(this), amount));
-        emit Deposit(msg.sender, amount);
-    }
+   function DepositCredit(uint amount) public {
+    require(credit.transferFrom(msg.sender, address(this), amount), "Transfer failed");
+    userBalances[msg.sender] += amount;
+    emit Deposit(msg.sender, amount);
+}
 
     // Check that user have enough money before calling request
-    function Pre_request(uint llm_id, address user) public view {
-        LLMNFT.LLM memory llms = nft.GetLLM(llm_id);
-        LLMNFT.Llm_type lm_type = llms.model_type;
-        Pay_type pt_;
-        uint max_context = llms.max_context_window;
-        LLM_meta memory meta = GetMetaLLM(llm_id);
-        uint hw_price = meta.hw_price_per_input_token;
-        //uint royalty = meta.author_royalty;
-        uint price;
-        if (lm_type == LLMNFT.Llm_type.text) {
-            pt_ = Pay_type.token; // tarification per token
-            price = max_context * hw_price;
-        } else {
-            pt_ = Pay_type.request;
-            price = hw_price * 1;
-        }
-    
-        uint balance = credit.balanceOf(user);
-         require(balance >= price, "ERC20: insufficient balance");
+   function Pre_request(uint llm_id, address user) public view {
+    LLMNFT.LLM memory llms = nft.GetLLM(llm_id);
+    LLMNFT.Llm_type lm_type = llms.model_type;
+    uint max_context = llms.max_context_window;
+    LLM_meta memory meta = GetMetaLLM(llm_id);
+    uint hw_price = meta.hw_price_per_input_token;
+    uint price;
+
+    if (lm_type == LLMNFT.Llm_type.text) {
+        price = max_context * hw_price;
+    } else {
+        price = hw_price * 1;
     }
+    
+    require(userBalances[user] >= price, "Insufficient deposited balance");
+}
 
     function CalculateServiceFee(uint hw_cost) public view returns (uint) {
         uint service_fee = FeesCalculator.CalculateAbstractFee(
@@ -299,7 +301,8 @@ contract Pool is Ownable {
     uint llm_id,
     uint256 llmInputTokens,
     uint256 llmOutputTokens,
-    uint processingTime
+    uint processingTime,
+    address user
 ) public {
     require(!blacklist[worker_id], "This worker is in blacklist");
     require(isApproved[worker_id], "This worker is not yet approved");
@@ -313,10 +316,8 @@ contract Pool is Ownable {
         cd.hwpin = lm.hw_price_per_input_token;
         cd.hwpout = lm.hw_price_per_output_token;
         cd.cost_hw =
-            cd.hwpin *
-            llmInputTokens +
-            cd.hwpout *
-            llmOutputTokens;
+            cd.hwpin * llmInputTokens +
+            cd.hwpout * llmOutputTokens;
         cd.a_cost = lm.author_royalty * cd.tokens_sum;
     } else {
         cd.hwpin = lm.hw_price_per_input_token;
@@ -325,18 +326,22 @@ contract Pool is Ownable {
         cd.a_cost = cd.awp;
     }
 
+    uint totalCost = cd.cost_hw + cd.a_cost;
+    
+    require(userBalances[user] >= totalCost, "Not enough deposited balance");
+    userBalances[user] -= totalCost;
+
     address worker = GetWorkerAddress(worker_id);
     address author = lm.author_wallet;
 
     if (HFwhitelist[worker]) {
-      hfswm.mint(worker, cd.cost_hw);
+        hfswm.mint(worker, cd.cost_hw);
     } else {
         require(credit.transfer(worker, cd.cost_hw), "Credit to worker failed");
     }
 
-
     if (HFwhitelist[author]) {
-      hfswm.mint(author, cd.a_cost);
+        hfswm.mint(author, cd.a_cost);
     } else {
         require(credit.transfer(author, cd.a_cost), "Credit to author failed");
     }
@@ -347,7 +352,7 @@ contract Pool is Ownable {
         worker,
         llmInputTokens,
         llmOutputTokens,
-        cd.cost_hw + cd.a_cost,
+        totalCost,
         processingTime,
         block.timestamp
     );
