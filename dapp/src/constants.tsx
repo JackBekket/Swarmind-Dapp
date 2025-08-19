@@ -1,7 +1,7 @@
-export const usdtAddress = '0xee09EA2B9CF153e9387b7070Ef270e4e94788d1d';
-export const swmAddress = '0x07aea508E43bC410417F8ad39c6Ae19BF717a93d';
+//export const usdtAddress = '0xee09EA2B9CF153e9387b7070Ef270e4e94788d1d';
+export const swmAddress = '0xe29cE1030acb2c4D255db15eA8218F0763C93dd0';
 export const receiverAddress = '0xE76b4773227Fb82e9759c276EFA83E5547deAEaD'; //Myrs's address for tests
-export const poolAddress = '0x848624851ade3e984993E4805fD36Bca84CE1C0A'; //Pool SC address
+export const poolAddress = '0xc4A0f7a6966655DB0915Efff03FcFB77b28B701F'; //Pool SC address
 
 export const permitDeadlineSeconds = 3000
 
