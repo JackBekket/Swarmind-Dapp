@@ -10,7 +10,6 @@ export const chainName = 'Swarm';
 
 export const curName = 'Ethereum';
 export const curSymbol = 'ETH';
-export const curDec = 18;
 
 export const chainRPC = 'https://rpc.devnet.swarmind.ai';
 export const blockExplorer = 'https://explorer.devnet.swarmind.ai/';
