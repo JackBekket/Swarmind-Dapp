@@ -48,7 +48,15 @@ contract LLMNFT is ERC721URIStorage{
     mapping (uint256 => LLM) public Models_metadata;  // from token_id to llm struct
     mapping (string =>uint256) public Hf_models; // from hfid to token_id
 
-
+    event LLMNFTCreated(
+        uint256 indexed tokenId,
+        address author,
+        string hfid,
+        uint256 royaltyPrice,
+        address authorWallet,
+        Llm_type modelType,
+        uint256 maxContextWindow
+    );
 
 
     constructor(string memory name_, string memory smbl_) ERC721(name_, smbl_) ERC721URIStorage() {
@@ -94,6 +102,17 @@ contract LLMNFT is ERC721URIStorage{
         Hf_models[hf_id_] = token_id;
         string memory file_id = llm.hfid;
         _setTokenURI(token_id,file_id);
+
+emit LLMNFTCreated(
+            token_id,
+            wallet,
+            hf_id_,
+            price,
+            wallet,
+            model_type_,
+            max_context
+        );
+
         return token_id;
    }
 

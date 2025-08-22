@@ -68,6 +68,23 @@ contract Pool is Ownable {
         uint256 timestamp
     );
     event NewWorker(address worker, bool isApproved);
+        event ModelAdded(
+        uint256 token_id,
+        uint256 author_royalty,
+        address author_wallet,
+        uint256 hw_price_per_input_token,
+        uint256 hw_price_per_output_token,
+        Pay_type pay_type_
+    );
+
+    event ModelDeleted(
+        uint256 token_id,
+        uint256 author_royalty,
+        address author_wallet,
+        uint256 hw_price_per_input_token,
+        uint256 hw_price_per_output_token,
+        Pay_type pay_type_
+    );
 
     // TODO: add other metadata from edgevpn into worker struct and make update methods
 
@@ -233,8 +250,17 @@ contract Pool is Ownable {
         lm.token_id = token_id;
         lm.hw_price_per_input_token = hw_price_in;
         lm.hw_price_per_output_token = hw_price_out;
-        //llm_list.push(lm);
+
         llm_list[token_id] = lm;
+
+        emit ModelAdded(
+            lm.token_id,
+            lm.author_royalty,
+            lm.author_wallet,
+            lm.hw_price_per_input_token,
+            lm.hw_price_per_output_token,
+            lm.pay_type_
+        );
     }
 
     function GetModel(
@@ -258,9 +284,22 @@ contract Pool is Ownable {
         llm_list[llm_id] = lm;
     }
 
-    function DeleteModel(uint256 llm_id) public onlyOwner {
+  function DeleteModel(uint256 llm_id) public onlyOwner {
+        LLM_meta memory lm = llm_list[llm_id];
+
+        emit ModelDeleted(
+            lm.token_id,
+            lm.author_royalty,
+            lm.author_wallet,
+            lm.hw_price_per_input_token,
+            lm.hw_price_per_output_token,
+            lm.pay_type_
+        );
+
         delete llm_list[llm_id];
     }
+
+
 
    function DepositCredit(uint amount) public {
     require(credit.transferFrom(msg.sender, address(this), amount), "Transfer failed");
