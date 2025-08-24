@@ -673,6 +673,92 @@ export const erc20Abi = [
       "inputs": [
         {
           "indexed": false,
+          "internalType": "uint256",
+          "name": "token_id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "author_royalty",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "author_wallet",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "hw_price_per_input_token",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "hw_price_per_output_token",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum Pool.Pay_type",
+          "name": "pay_type_",
+          "type": "uint8"
+        }
+      ],
+      "name": "ModelAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "token_id",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "author_royalty",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "author_wallet",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "hw_price_per_input_token",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "hw_price_per_output_token",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum Pool.Pay_type",
+          "name": "pay_type_",
+          "type": "uint8"
+        }
+      ],
+      "name": "ModelDeleted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
           "internalType": "address",
           "name": "worker",
           "type": "address"
@@ -1329,4 +1415,5 @@ export const erc20Abi = [
       "type": "function"
     }
   ]
+  
   
