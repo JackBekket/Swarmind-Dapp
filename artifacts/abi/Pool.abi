@@ -604,6 +604,11 @@
         "internalType": "address",
         "name": "user",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "pics",
+        "type": "uint256"
       }
     ],
     "name": "ProcessResponse",

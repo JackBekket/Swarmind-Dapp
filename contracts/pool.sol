@@ -42,7 +42,7 @@ contract Pool is Ownable {
     //huggingface token
     HFSWM public hfswm;
 
-
+    
     uint service_fee_percent = 1; // 1%
     // TODO: add constant service address where we will collect fee
     //SUGGESTION @daseinsucks: use multisig?
@@ -341,7 +341,8 @@ contract Pool is Ownable {
     uint256 llmInputTokens,
     uint256 llmOutputTokens,
     uint processingTime,
-    address user
+    address user,
+    uint pics
 ) public {
     require(!blacklist[worker_id], "This worker is in blacklist");
     require(isApproved[worker_id], "This worker is not yet approved");
@@ -361,8 +362,9 @@ contract Pool is Ownable {
     } else {
         cd.hwpin = lm.hw_price_per_input_token;
         cd.awp = lm.author_royalty;
-        cd.cost_hw = cd.hwpin;
+        cd.cost_hw = cd.hwpin * pics;
         cd.a_cost = cd.awp;
+
     }
 
     uint totalCost = cd.cost_hw + cd.a_cost;
