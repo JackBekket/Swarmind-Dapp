@@ -15,6 +15,16 @@
         "internalType": "address",
         "name": "hfswm_",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "walletHub_",
+        "type": "address"
+      },
+      {
+        "internalType": "enum Pool.Pool_type",
+        "name": "_pt",
+        "type": "uint8"
       }
     ],
     "stateMutability": "nonpayable",
@@ -47,58 +57,9 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "Deposit",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
         "internalType": "uint256",
         "name": "token_id",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "author_royalty",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "author_wallet",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "hw_price_per_input_token",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "hw_price_per_output_token",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "enum Pool.Pay_type",
-        "name": "pay_type_",
-        "type": "uint8"
       }
     ],
     "name": "ModelAdded",
@@ -112,36 +73,6 @@
         "internalType": "uint256",
         "name": "token_id",
         "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "author_royalty",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "author_wallet",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "hw_price_per_input_token",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "hw_price_per_output_token",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "enum Pool.Pay_type",
-        "name": "pay_type_",
-        "type": "uint8"
       }
     ],
     "name": "ModelDeleted",
@@ -363,70 +294,6 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "amount",
-        "type": "uint256"
-      }
-    ],
-    "name": "DepositCredit",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "llm_id",
-        "type": "uint256"
-      }
-    ],
-    "name": "GetMetaLLM",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "token_id",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "author_royalty",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "author_wallet",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256",
-            "name": "hw_price_per_input_token",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "hw_price_per_output_token",
-            "type": "uint256"
-          },
-          {
-            "internalType": "enum Pool.Pay_type",
-            "name": "pay_type_",
-            "type": "uint8"
-          }
-        ],
-        "internalType": "struct Pool.LLM_meta",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
         "name": "llm_id",
         "type": "uint256"
       }
@@ -469,44 +336,6 @@
         "internalType": "struct Pool.LLM_meta",
         "name": "",
         "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "llm_id",
-        "type": "uint256"
-      }
-    ],
-    "name": "GetTotalPrice",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
-      }
-    ],
-    "name": "GetUserBalance",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -609,6 +438,16 @@
         "internalType": "uint256",
         "name": "pics",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "imageArea",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "imageSteps",
+        "type": "uint256"
       }
     ],
     "name": "ProcessResponse",
@@ -684,27 +523,19 @@
         "internalType": "address",
         "name": "new_address",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "new_hw_price_in",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "new_hw_price_out",
+        "type": "uint256"
       }
     ],
     "name": "UpdateModel",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "string",
-        "name": "old_lai_pub_key",
-        "type": "string"
-      },
-      {
-        "internalType": "string",
-        "name": "new_lai_pub_key",
-        "type": "string"
-      }
-    ],
-    "name": "UpdateWorker",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -723,6 +554,19 @@
         "internalType": "bool",
         "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "credit",
+    "outputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -762,12 +606,38 @@
   },
   {
     "inputs": [],
+    "name": "nft",
+    "outputs": [
+      {
+        "internalType": "contract LLMNFT",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "owner",
     "outputs": [
       {
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pt",
+    "outputs": [
+      {
+        "internalType": "enum Pool.Pool_type",
+        "name": "",
+        "type": "uint8"
       }
     ],
     "stateMutability": "view",
@@ -794,19 +664,13 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "userBalances",
+    "inputs": [],
+    "name": "walletHub",
     "outputs": [
       {
-        "internalType": "uint256",
+        "internalType": "contract WalletHub",
         "name": "",
-        "type": "uint256"
+        "type": "address"
       }
     ],
     "stateMutability": "view",

@@ -240,6 +240,37 @@
     "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newPrice",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newContextWindow",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "newHfId",
+        "type": "string"
+      }
+    ],
+    "name": "LLMUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
         "indexed": false,
         "internalType": "uint256",
         "name": "_tokenId",
@@ -425,6 +456,34 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "token_id",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "new_price",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "new_context",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "new_hf_id",
+        "type": "string"
+      }
+    ],
+    "name": "UpdateLLMMetadata",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
