@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 /**
  * @title LLM as NFT
  * @author zer0_eX (JackBekket) 
+ * @author m0rs (daseinsucks) 
  * @notice
  * 
  * Input data:
@@ -58,33 +59,30 @@ contract LLMNFT is ERC721URIStorage{
         uint256 maxContextWindow
     );
 
+       event LLMUpdated(
+        uint256 indexed tokenId,
+        uint256 newPrice,
+        uint256 newContextWindow,
+        string newHfId
+    );
+
+
 
     constructor(string memory name_, string memory smbl_) ERC721(name_, smbl_) ERC721URIStorage() {
  
     }
 
-
+   modifier onlyAuthor(uint256 token_id) {
+        require(
+            msg.sender == Models_metadata[token_id].author_wallet,
+            "Not authorized: caller is not model author"
+        );
+        _;
+    }
     // base url. may be used as hugginface link
     function _baseURI() internal view virtual override returns (string memory) {
         return "https://huggingface.co/";
     }
-
-
-
-
-    /**
-     *  
-     */
-    /*
-    function CreateItem(string memory file_id) public returns (uint256 token_id) {
-        token_ids_count +=1;
-        token_id = token_ids_count;
-        _safeMint(msg.sender,token_id);
-        _setTokenURI(token_id,file_id);
-
-    }
-    */
-
 
    function CreateLLM_NFT(string memory hf_id_, uint256 price, address wallet, Llm_type model_type_, uint256 max_context) public returns (uint256) {
 
@@ -119,6 +117,20 @@ emit LLMNFTCreated(
     function GetLLM(uint token_id) public view returns (LLM memory) {
         return Models_metadata[token_id];
     }
+
+    function UpdateLLMMetadata(
+        uint256 token_id,
+        uint256 new_price,
+        uint256 new_context,
+        string memory new_hf_id
+    ) public onlyAuthor(token_id) {
+        Models_metadata[token_id].royalty_price = new_price;
+        Models_metadata[token_id].max_context_window = new_context;
+        Models_metadata[token_id].hfid = new_hf_id;
+
+        emit LLMUpdated(token_id, new_price, new_context, new_hf_id);
+    }
+}
+
    
 
-}

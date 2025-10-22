@@ -1,28 +1,24 @@
-//SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-//import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
-//import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./LLMNFT.sol";
 import "./FeesCalculator.sol";
 import "./hfswm.sol";
+import "./WalletHub.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title LLM inference Pool
- * @author Sergey Ponomarev (aka JackBekket)
- * @notice This is draft for inference (LLM) provider pool
+ * @author zer0_eX (JackBekket) 
+ * @author m0rs (daseinsucks) 
+ * @notice Pool for inference providers connected to shared WalletHub
  */
 
 contract Pool is Ownable {
-  constructor(address llm_nft, address credit_, address hfswm_) Ownable(msg.sender) {
-    nft = LLMNFT(llm_nft);
-    credit = IERC20(credit_);
-    hfswm = HFSWM(hfswm_);
-}
+    using SafeERC20 for IERC20;
 
-    //global vars
     enum Pool_type {
         private_pool,
         public_pool
@@ -32,30 +28,21 @@ contract Pool is Ownable {
         request
     }
 
-    //address owner;
-    Pool_type pt;
-    //IERC721Metadata LLMNFT_token;
-    LLMNFT nft;
-
-    IERC20 credit;
-    
-    //huggingface token
+    LLMNFT public nft;
+    IERC20 public credit;
     HFSWM public hfswm;
+    WalletHub public walletHub;
 
-    
-    uint service_fee_percent = 1; // 1%
-    // TODO: add constant service address where we will collect fee
-    //SUGGESTION @daseinsucks: use multisig?
+    Pool_type public pt;
+    uint256 private service_fee_percent = 1; // 1%
+    address private treasury;
 
-    mapping(string => address) worker_wallets; // local_ai public key -> worker wallet address
-    mapping(address => string[]) wallets_workers; // wallet address -> lai public key
-    mapping(string => bool) public blacklist; //address => banned (true/false)
-    mapping(string => bool) public isApproved; //for private pools
-    mapping(address => bool) public HFwhitelist; //providers from huggingface
-    mapping(address => uint256) public userBalances; 
-    //TODO: events
+    mapping(string => address) worker_wallets; // lai pubkey -> worker wallet
+    mapping(address => string[]) wallets_workers; // wallet -> lai pubkeys
+    mapping(string => bool) public blacklist;
+    mapping(string => bool) public isApproved;
+    mapping(address => bool) public HFwhitelist;
 
-    event Deposit(address user, uint amount);
     event Payout(address provider, uint256 llm_id, uint amount);
     event Response(
         uint256 id,
@@ -68,27 +55,9 @@ contract Pool is Ownable {
         uint256 timestamp
     );
     event NewWorker(address worker, bool isApproved);
-        event ModelAdded(
-        uint256 token_id,
-        uint256 author_royalty,
-        address author_wallet,
-        uint256 hw_price_per_input_token,
-        uint256 hw_price_per_output_token,
-        Pay_type pay_type_
-    );
+    event ModelAdded(uint256 token_id);
+    event ModelDeleted(uint256 token_id);
 
-    event ModelDeleted(
-        uint256 token_id,
-        uint256 author_royalty,
-        address author_wallet,
-        uint256 hw_price_per_input_token,
-        uint256 hw_price_per_output_token,
-        Pay_type pay_type_
-    );
-
-    // TODO: add other metadata from edgevpn into worker struct and make update methods
-
-    // LLM models
     struct LLM_meta {
         uint256 token_id;
         uint256 author_royalty;
@@ -98,7 +67,6 @@ contract Pool is Ownable {
         Pay_type pay_type_;
     }
 
-    //We need this to avoid "Stack too deep" in ProcessResponse
     struct CostDetails {
         uint256 hwpin;
         uint256 hwpout;
@@ -108,51 +76,35 @@ contract Pool is Ownable {
         uint256 tokens_sum;
     }
 
-    //LLM_meta[] llm_list;    // TODO: idk if we should use mapping or array.
-    //SUGGESTION @daseinsucks: I say we use map, since for crud methods it'll be cheaper to fetch from map than iterate through array
     mapping(uint => LLM_meta) llm_list;
 
-    function GetMetaLLM(uint llm_id) public view returns (LLM_meta memory) {
-        return llm_list[llm_id];
+    constructor(
+        address llm_nft,
+        address credit_,
+        address hfswm_,
+        address walletHub_,
+         Pool_type _pt
+    ) Ownable(msg.sender) {
+        nft = LLMNFT(llm_nft);
+        credit = IERC20(credit_);
+        hfswm = HFSWM(hfswm_);
+        walletHub = WalletHub(walletHub_);
+        treasury = msg.sender;
+        pt = _pt;
     }
 
-    function GetTotalPrice(uint llm_id) public view returns (uint) {
-        LLM_meta memory lm = GetMetaLLM(llm_id);
-        uint ap = lm.author_royalty;
-        uint hwpin = lm.hw_price_per_input_token;
-        uint hwpout = lm.hw_price_per_output_token;
-        uint tp = ap + hwpin + hwpout;
-        return tp;
-    }
+    // ==================== Workers ====================
 
     function RegisterWorker(string memory lai_public_key) public {
-        require(!blacklist[lai_public_key], "This key is in blacklist");
-        require(
-            worker_wallets[lai_public_key] == address(0),
-            "Key already registered"
-        );
-        require(
-            wallets_workers[msg.sender].length < 20,
-            "Maximum number of workers (20) reached"
-        );
+        require(!blacklist[lai_public_key], "This key is blacklisted");
+        require(worker_wallets[lai_public_key] == address(0), "Already registered");
+        require(wallets_workers[msg.sender].length < 20, "Max workers reached");
 
         wallets_workers[msg.sender].push(lai_public_key);
         worker_wallets[lai_public_key] = msg.sender;
 
-        if (pt == Pool_type.public_pool) {
-            isApproved[lai_public_key] = true;
-        } else {
-            isApproved[lai_public_key] = false;
-        }
-
+        isApproved[lai_public_key] = (pt == Pool_type.public_pool);
         emit NewWorker(msg.sender, isApproved[lai_public_key]);
-    }
-
-    function GetWorkerAddress(
-        string memory lai_id
-    ) public view returns (address) {
-        address worker = worker_wallets[lai_id];
-        return worker;
     }
 
     function ApproveWorker(string memory lai_public_key) public onlyOwner {
@@ -160,10 +112,7 @@ contract Pool is Ownable {
     }
 
     function Unregister(string memory lai_pub_key) public {
-        require(
-            worker_wallets[lai_pub_key] == msg.sender,
-            "Not your worker key"
-        );
+        require(worker_wallets[lai_pub_key] == msg.sender, "Not your key");
         string[] storage keys = wallets_workers[msg.sender];
         for (uint i = 0; i < keys.length; i++) {
             if (keccak256(bytes(keys[i])) == keccak256(bytes(lai_pub_key))) {
@@ -172,47 +121,14 @@ contract Pool is Ownable {
                 break;
             }
         }
-
         delete worker_wallets[lai_pub_key];
+        delete isApproved[lai_pub_key];
     }
 
-    function UpdateWorker(
-    string memory old_lai_pub_key,
-    string memory new_lai_pub_key
-) public {
-    require(
-        worker_wallets[old_lai_pub_key] == msg.sender,
-        "Not your worker key"
-    );
-    require(
-        worker_wallets[new_lai_pub_key] == address(0),
-        "New key already registered"
-    );
-    require(!blacklist[new_lai_pub_key], "New key is blacklisted");
-
-    string[] storage keys = wallets_workers[msg.sender];
-    bool updated = false;
-
-    for (uint i = 0; i < keys.length; i++) {
-        if (keccak256(bytes(keys[i])) == keccak256(bytes(old_lai_pub_key))) {
-            keys[i] = new_lai_pub_key;
-            updated = true;
-            break;
-        }
+    function GetWorkerAddress(string memory lai_id) public view returns (address) {
+        return worker_wallets[lai_id];
     }
 
-    require(updated, "Old key not found");
-
-    delete worker_wallets[old_lai_pub_key];
-    worker_wallets[new_lai_pub_key] = msg.sender;
-
-    isApproved[new_lai_pub_key] = isApproved[old_lai_pub_key];
-    delete isApproved[old_lai_pub_key];
-
-    emit NewWorker(msg.sender, isApproved[new_lai_pub_key]);
-}
-
-    // TODO: IMPORTANT -- change visibility to only Owner or only factory(?). idk what would be tipical deployment process prolly just onlyOwner works fine.
     function Ban(string memory lai_pub_key) public onlyOwner {
         blacklist[lai_pub_key] = true;
     }
@@ -221,98 +137,76 @@ contract Pool is Ownable {
         blacklist[lai_pub_key] = false;
     }
 
+     function setServiceFeePercent(uint256 _percent) external onlyOwner {
+        require(_percent <= 100, "Invalid percent"); 
+        service_fee_percent = _percent;
+    }
+
+    // ==================== HuggingFace Whitelist ====================
+
     function AddToHFWhitelist(address addr) public onlyOwner {
-    HFwhitelist[addr] = true;
-}
+        HFwhitelist[addr] = true;
+    }
 
     function RemoveFromHFWhitelist(address addr) public onlyOwner {
-            HFwhitelist[addr] = false;
-}
+        HFwhitelist[addr] = false;
+    }
 
+    // ==================== Models ====================
 
-    function AddModel(
-        uint token_id,
-        uint hw_price_in,
-        uint hw_price_out
-    ) public onlyOwner {
+    function AddModel(uint token_id, uint hw_price_in, uint hw_price_out) public onlyOwner {
         LLMNFT.LLM memory llm_struct = nft.GetLLM(token_id);
-        LLM_meta memory lm;
-        Pay_type pt_;
-        LLMNFT.Llm_type lm_type = llm_struct.model_type;
-        if (lm_type == LLMNFT.Llm_type.text) {
-            pt_ = Pay_type.token; // tarification per token
-        } else {
-            pt_ = Pay_type.request;
-        }
-        lm.pay_type_ = pt_;
-        lm.author_royalty = llm_struct.royalty_price;
-        lm.author_wallet = llm_struct.author_wallet;
-        lm.token_id = token_id;
-        lm.hw_price_per_input_token = hw_price_in;
-        lm.hw_price_per_output_token = hw_price_out;
+        Pay_type pt_ = llm_struct.model_type == LLMNFT.Llm_type.text
+            ? Pay_type.token
+            : Pay_type.request;
 
-        llm_list[token_id] = lm;
+        llm_list[token_id] = LLM_meta({
+            token_id: token_id,
+            author_royalty: llm_struct.royalty_price,
+            author_wallet: llm_struct.author_wallet,
+            hw_price_per_input_token: hw_price_in,
+            hw_price_per_output_token: hw_price_out,
+            pay_type_: pt_
+        });
 
-        emit ModelAdded(
-            lm.token_id,
-            lm.author_royalty,
-            lm.author_wallet,
-            lm.hw_price_per_input_token,
-            lm.hw_price_per_output_token,
-            lm.pay_type_
-        );
+        emit ModelAdded(token_id);
     }
 
-    function GetModel(
-        uint256 llm_id
-    ) public view returns (Pool.LLM_meta memory) {
-        return llm_list[llm_id];
-    }
-
-    function GetUserBalance(address user) public view returns (uint256) {
-    return userBalances[user];
-}
-
-    function UpdateModel(
+        function UpdateModel(
         uint256 llm_id,
         uint new_royalty,
-        address new_address
+        address new_address,
+        uint new_hw_price_in,
+        uint new_hw_price_out
     ) public onlyOwner {
         Pool.LLM_meta memory lm = llm_list[llm_id];
         lm.author_royalty = new_royalty;
         lm.author_wallet = new_address;
+        lm.hw_price_per_input_token = new_hw_price_in;
+        lm.hw_price_per_output_token= new_hw_price_out;
         llm_list[llm_id] = lm;
     }
 
-  function DeleteModel(uint256 llm_id) public onlyOwner {
-        LLM_meta memory lm = llm_list[llm_id];
-
-        emit ModelDeleted(
-            lm.token_id,
-            lm.author_royalty,
-            lm.author_wallet,
-            lm.hw_price_per_input_token,
-            lm.hw_price_per_output_token,
-            lm.pay_type_
-        );
-
+    function DeleteModel(uint llm_id) public onlyOwner {
         delete llm_list[llm_id];
+        emit ModelDeleted(llm_id);
     }
 
+    function GetModel(uint llm_id) public view returns (LLM_meta memory) {
+        return llm_list[llm_id];
+    }
 
+    // ==================== Requests ====================
 
-   function DepositCredit(uint amount) public {
-    require(credit.transferFrom(msg.sender, address(this), amount), "Transfer failed");
-    userBalances[msg.sender] += amount;
-    emit Deposit(msg.sender, amount);
-}
+    function CalculateServiceFee(uint hw_cost) public view returns (uint) {
+        return FeesCalculator.CalculateAbstractFee(hw_cost, 100, service_fee_percent);
+    }
 
-    // Check that user have enough money before calling request
-   function Pre_request(uint llm_id, address user) public view {
+    function Pre_request(uint llm_id, address user) public view {
     LLMNFT.LLM memory llms = nft.GetLLM(llm_id);
     LLMNFT.Llm_type lm_type = llms.model_type;
     uint max_context = llms.max_context_window;
-    LLM_meta memory meta = GetMetaLLM(llm_id);
+    LLM_meta memory meta = GetModel(llm_id);
     uint hw_price = meta.hw_price_per_input_token;
     uint price;
 
@@ -322,82 +216,114 @@ contract Pool is Ownable {
         price = hw_price * 1;
     }
     
-    require(userBalances[user] >= price, "Insufficient deposited balance");
+    require(walletHub.userBalance(user) >= price, "Insufficient deposited balance");
 }
 
-    function CalculateServiceFee(uint hw_cost) public view returns (uint) {
-        uint service_fee = FeesCalculator.CalculateAbstractFee(
-            hw_cost,
-            100,
-            service_fee_percent
+    function ProcessResponse(
+        uint request_id,
+        string memory worker_id,
+        uint llm_id,
+        uint256 llmInputTokens,
+        uint256 llmOutputTokens,
+        uint processingTime,
+        address user,
+        uint pics,
+        uint imageArea, 
+        uint imageSteps    
+    ) public onlyOwner {
+        require(!blacklist[worker_id], "Blacklisted worker");
+        require(isApproved[worker_id], "Worker not approved");
+
+        CostDetails memory cd = _calculateCosts(llm_id, llmInputTokens, llmOutputTokens, pics, imageArea, imageSteps);
+        uint256 totalCost = cd.cost_hw + cd.a_cost;
+
+        walletHub.debit(user, totalCost);
+        _distributePayments(worker_id, llm_id, totalCost, cd);
+
+        emit Response(
+            request_id,
+            llm_id,
+            GetWorkerAddress(worker_id),
+            llmInputTokens,
+            llmOutputTokens,
+            totalCost,
+            processingTime,
+            block.timestamp
         );
-        return service_fee;
     }
 
-    function ProcessResponse(
-    uint request_id,
-    string memory worker_id,
+    function _calculateCosts(
     uint llm_id,
     uint256 llmInputTokens,
     uint256 llmOutputTokens,
-    uint processingTime,
-    address user,
-    uint pics
-) public {
-    require(!blacklist[worker_id], "This worker is in blacklist");
-    require(isApproved[worker_id], "This worker is not yet approved");
-
-    LLM_meta memory lm = GetMetaLLM(llm_id);
-    Pay_type pt_ = lm.pay_type_;
+    uint pics,
+    uint imageArea, 
+    uint imageSteps    
+) internal view returns (CostDetails memory) {
+    LLM_meta memory lm = llm_list[llm_id];
     CostDetails memory cd;
 
-    if (pt_ == Pay_type.token) {
+    if (lm.pay_type_ == Pay_type.token) {
+        // Текстовые LLM
         cd.tokens_sum = llmInputTokens + llmOutputTokens;
         cd.hwpin = lm.hw_price_per_input_token;
         cd.hwpout = lm.hw_price_per_output_token;
-        cd.cost_hw =
-            cd.hwpin * llmInputTokens +
-            cd.hwpout * llmOutputTokens;
+        cd.cost_hw = cd.hwpin * llmInputTokens + cd.hwpout * llmOutputTokens;
         cd.a_cost = lm.author_royalty * cd.tokens_sum;
     } else {
         cd.hwpin = lm.hw_price_per_input_token;
         cd.awp = lm.author_royalty;
-        cd.cost_hw = cd.hwpin * pics;
+        uint baseArea = 1024 * 1024;
+        uint baseSteps = 25;
+
+        uint areaMultiplier = (imageArea * 1e18) / baseArea; 
+        uint stepsMultiplier = (imageSteps * 1e18) / baseSteps;
+
+        uint totalMultiplier = (areaMultiplier * stepsMultiplier) / 1e18;
+
+        cd.cost_hw = (cd.hwpin * pics * totalMultiplier) / 1e18;
         cd.a_cost = cd.awp;
-
     }
 
-    uint totalCost = cd.cost_hw + cd.a_cost;
-    
-    require(userBalances[user] >= totalCost, "Not enough deposited balance");
-    userBalances[user] -= totalCost;
-
-    address worker = GetWorkerAddress(worker_id);
-    address author = lm.author_wallet;
-
-    if (HFwhitelist[worker]) {
-        hfswm.mint(worker, cd.cost_hw);
-    } else {
-        require(credit.transfer(worker, cd.cost_hw), "Credit to worker failed");
-    }
-
-    if (HFwhitelist[author]) {
-        hfswm.mint(author, cd.a_cost);
-    } else {
-        require(credit.transfer(author, cd.a_cost), "Credit to author failed");
-    }
-
-    emit Response(
-        request_id,
-        llm_id,
-        worker,
-        llmInputTokens,
-        llmOutputTokens,
-        totalCost,
-        processingTime,
-        block.timestamp
-    );
-
-    emit Payout(worker, llm_id, cd.cost_hw);
+    return cd;
 }
+
+
+    function _distributePayments(
+        string memory worker_id,
+        uint llm_id,
+        uint256 totalCost,
+        CostDetails memory cd
+    ) internal {
+        uint256 serviceFee = CalculateServiceFee(totalCost);
+        uint256 totalWithoutFee = totalCost - serviceFee;
+        require(totalCost > 0, "zero total");
+
+        uint256 workerPortion = (cd.cost_hw * totalWithoutFee) / totalCost;
+        uint256 authorPortion = (cd.a_cost * totalWithoutFee) / totalCost;
+        uint256 remainder = totalWithoutFee - workerPortion - authorPortion;
+
+        address worker = GetWorkerAddress(worker_id);
+        address author = llm_list[llm_id].author_wallet;
+
+        if (worker != address(0)) {
+            if (HFwhitelist[worker]) {
+                hfswm.mint(worker, workerPortion);
+            } else {
+                walletHub.pay(worker, workerPortion);
+            }
+        }
+
+        if (author != address(0)) {
+            if (HFwhitelist[author]) {
+                hfswm.mint(author, authorPortion);
+            } else {
+                walletHub.pay(author, authorPortion);
+            }
+        }
+
+        walletHub.treasuryTransfer(serviceFee + remainder);
+        emit Payout(worker, llm_id, workerPortion);
+    }
+
 }
